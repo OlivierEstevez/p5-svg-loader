@@ -1,2 +1,3 @@
 # p5-svg-loader
-Load SVG files on p5js sketches
+
+A P5.js add-on library for loading and manipulating SVG files.

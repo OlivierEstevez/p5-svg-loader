@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="80" fill="#ff6b6b" stroke="#c44569" stroke-width="3"/>
+  
+  <!-- Inner circle -->
+  <circle cx="100" cy="100" r="50" fill="#4ecdc4" stroke="#26a69a" stroke-width="2"/>
+  
+  <!-- Star shape -->
+  <polygon points="100,30 110,70 150,70 120,100 130,140 100,120 70,140 80,100 50,70 90,70" 
+           fill="#ffe66d" stroke="#f39c12" stroke-width="2"/>
+  
+  <!-- Text -->
+  <text x="100" y="180" text-anchor="middle" font-family="Arial, sans-serif" 
+        font-size="14" fill="#2c3e50" font-weight="bold">p5-svg-loader</text>
+</svg> 

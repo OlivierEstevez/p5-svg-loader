@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>p5-svg-loader - P5.js 2.0 Instance Mode</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background-color: #222;
+      color: #fff;
+    }
+  </style>
+  <!-- Load p5.js 2.0 -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@2.0.0/lib/p5.min.js"></script>
+  <!-- Load our add-on library -->
+  <script src="../dist/p5-svg-loader.js"></script>
+</head>
+
+<body>
+  <h1>p5-svg-loader - P5.js 2.x Instance Mode</h1>
+  <div id="sketch-container"></div>
+
+  <script>
+    let sketch;
+    let mySVG;
+    let svgElement;
+
+    // Instance mode sketch
+    const sketchInstance = (p) => {
+
+      p.setup = async function () {
+
+        const canvas = p.createCanvas(600, 400);
+        canvas.parent('sketch-container');
+
+        mySVG = await p.loadSVG('sample.svg');
+        console.log('SVG loaded:', mySVG);
+      };
+
+      p.draw = function () {
+        p.background(240);
+        p.drawSVG(mySVG, 50, 50, 200, 200);
+      };
+
+      // Store reference to the instance
+      sketch = p;
+    };
+
+    // Create the sketch instance
+    new p5(sketchInstance);
+  </script>
+</body>
+
+</html>
