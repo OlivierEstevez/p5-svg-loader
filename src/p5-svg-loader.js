@@ -1,49 +1,69 @@
 /**
  * p5-svg-loader.js
- * A P5.js add-on library for loading SVG files
+ * A P5.js add-on library for loading and manipulating SVG files.
  * 
  * @version 0.0.1
  * @author Olivier Estévez
  * @license MIT
  */
 
+import { parse } from "svg-parser";
+
 (function() {
   'use strict';
 
   // P5.js 2.0 addon definition
-  const p5SvgLoaderAddon = function(p5, fn, lifecycles) {
-    // Main SVG loader function
-    fn.loadSVG = function(filename, callback) {
-      console.log(`Loading SVG file: ${filename}`);
+  const p5SvgLoaderAddon = function (p5, fn, lifecycles) {
+    
+    p5.prototype.SVG = class {
+      constructor(svgString) {
+        this.parsed = parse(svgString);
+        this.svg = this.parsed.children[0];
+        this.width = parseFloat(this.svg.properties.width) || 100;
+        this.height = parseFloat(this.svg.properties.height) || 100;
+        // this.viewBox = this.parseViewBox(this.svg.properties.viewBox);
+
+        this.x = 20
+        this.y = 20
+        
+        this.points = []
+        this.children = []
+      }
       
-      // Placeholder implementation
-      const result = {
-        data: null,
-        error: null,
-        filename: filename
-      };
+      getChild(name) { /* ... */ }
 
-      // Simulate async loading
-      setTimeout(() => {
-        result.data = `<svg>Sample SVG content for ${filename}</svg>`;
-        if (callback) {
-          callback(result);
-        }
-      }, 100);
-
-      return Promise.resolve(result);
+      points(name) { /* ... */ }
     };
 
-    // Additional utility methods
+    // Main SVG loader function
+    fn.loadSVG = async function(filename, callback) {
+      const svgString = fetch(filename)
+      .then(response => response.text())
+      .catch(error => {
+        console.error('Error loading SVG:', error);
+      });
+      const svgContent = await svgString;
+      const result_1 = new this.SVG(svgContent);
+      if (callback) {
+        callback(result_1);
+      }
+      return result_1;
+    };
+
+
     fn.drawSVG = function (svgData, x, y, width, height) {
       this.fill(255, 0, 0);
       this.noStroke();
       this.rect(x, y, width, height);
     };
 
+    fn.drawSVGDebug = function (svgData, x, y, width, height) {
+      // ...
+    };
+
     // Lifecycle hooks
     lifecycles.presetup = function() {
-      console.log('p5-svg-loader initialized');
+      console.log('⚙️ p5-svg-loader initialized');
     };
   };
 
@@ -100,4 +120,4 @@
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = p5;
   }
-})(); 
+})();

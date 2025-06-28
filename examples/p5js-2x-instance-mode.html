@@ -37,13 +37,15 @@
         const canvas = p.createCanvas(600, 400);
         canvas.parent('sketch-container');
 
-        mySVG = await p.loadSVG('sample.svg');
+        mySVG = await p.loadSVG('./sample.svg');
         console.log('SVG loaded:', mySVG);
       };
 
       p.draw = function () {
         p.background(240);
-        p.drawSVG(mySVG, 50, 50, 200, 200);
+
+        p.drawSVG(mySVG, 0, 0, 100, 100)
+
       };
 
       // Store reference to the instance

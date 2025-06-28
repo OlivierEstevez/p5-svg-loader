@@ -1,3 +1,5 @@
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
 
 export default [
@@ -9,10 +11,12 @@ export default [
       format: 'umd',
       name: 'p5SvgLoader',
       globals: {
-        p5: 'p5'
+        p5: 'p5',
+        'svg-parser': 'svgParser'
       }
     },
-    external: ['p5']
+    external: ['p5'],
+    plugins: [resolve(), commonjs()]
   },
   // UMD build (minified)
   {
@@ -22,11 +26,12 @@ export default [
       format: 'umd',
       name: 'p5SvgLoader',
       globals: {
-        p5: 'p5'
+        p5: 'p5',
+        'svg-parser': 'svgParser'
       }
     },
     external: ['p5'],
-    plugins: [terser()]
+    plugins: [resolve(), commonjs(), terser()]
   },
   // ESM build
   {
@@ -35,6 +40,7 @@ export default [
       file: 'dist/p5-svg-loader.esm.js',
       format: 'esm'
     },
-    external: ['p5']
+    external: ['p5'],
+    plugins: [resolve(), commonjs()]
   }
 ]; 

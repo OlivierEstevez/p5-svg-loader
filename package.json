@@ -21,14 +21,19 @@
   ],
   "author": "Olivier Estévez",
   "license": "MIT",
+  "dependencies": {
+    "svg-parser": "^2.0.4"
+  },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-terser": "^0.4.4",
-    "rollup": "^4.6.0",
-    "http-server": "^14.1.1"
+    "http-server": "^14.1.1",
+    "rollup": "^4.6.0"
   },
   "files": [
     "dist/",
     "src/",
     "examples/"
   ]
-} 
+}
