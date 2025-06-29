@@ -223,6 +223,18 @@ import { parse } from "svg-parser";
     }
 
     function drawPolygon(p, props, viewBox, scaleX, scaleY) {
+      if (!props.points) return;
+      const points = parsePoints(props.points);
+
+      // Apply styles
+      applyStyles(p, props);
+
+      p.beginShape();
+      points.forEach((point) => {
+        const transformedPoint = transformCoord(point.x, point.y, viewBox, scaleX, scaleY);
+        p.vertex(transformedPoint.x, transformedPoint.y);
+      });
+      p.endShape(p.CLOSE);
     }
 
     function drawText(p, props, viewBox, scaleX, scaleY) {
