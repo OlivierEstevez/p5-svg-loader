@@ -67,10 +67,8 @@ import { parse } from "svg-parser";
 
       this.push();
       this.translate(x, y);
-      this.scale(scaleX, scaleY);
-      this.translate(-svgData.viewBox.x, -svgData.viewBox.y);
 
-      drawNode(this, svgData.svg);
+      drawNode(this, svgData.svg, svgData.viewBox, scaleX, scaleY);
 
       this.pop();
     };
@@ -80,81 +78,141 @@ import { parse } from "svg-parser";
     };
 
     // Helper functions
-    function drawNode(p, node) {
+    function transformCoord(x, y, viewBox, scaleX, scaleY) {
+      return {
+        x: (x - viewBox.x) * scaleX,
+        y: (y - viewBox.y) * scaleY
+      };
+    }
+
+    function drawNode(p, node, viewBox, scaleX, scaleY) {
       if (!node || !node.children) return;
       
       // Process this node if it's a shape
       if (node.tagName && node.tagName !== 'svg') {
-        drawShape(p, node);
+        drawShape(p, node, viewBox, scaleX, scaleY);
       }
 
       // Process children recursively
       if (node.children && node.children.length > 0) {
-        node.children.forEach((child) => drawNode(p, child));
+        node.children.forEach((child) => drawNode(p, child, viewBox, scaleX, scaleY));
       }
     };
 
-    function drawShape(p, node) {
+    function drawShape(p, node, viewBox, scaleX, scaleY) {
       const props = node.properties || {};
 
       // Set styles
-      applyStyles(p, props);
+      //applyStyles(p, props);
 
       switch (node.tagName) {
         case "path":
-          drawPath(p, props.d);
+          drawPath(p, props.d, viewBox, scaleX, scaleY);
           break;
         case "rect":
-          drawRect(p, props);
+          drawRect(p, props, viewBox, scaleX, scaleY);
           break;
         case "circle":
-          drawCircle(p, props);
+          drawCircle(p, props, viewBox, scaleX, scaleY);
           break;
         case "ellipse":
-          drawEllipse(p, props);
+          drawEllipse(p, props, viewBox, scaleX, scaleY);
           break;
         case "line":
-          drawLine(p, props);
+          drawLine(p, props, viewBox, scaleX, scaleY);
           break;
         case "polyline":
-          drawPolyline(p, props);
+          drawPolyline(p, props, viewBox, scaleX, scaleY);
           break;
         case "polygon":
-          drawPolygon(p, props);
+          drawPolygon(p, props, viewBox, scaleX, scaleY);
           break;
         case "text":
-          drawText(p, props);
+          drawText(p, props, viewBox, scaleX, scaleY);
           break;
       }
     }
 
-    function drawPath(p, props) {
+    function drawPath(p, d, viewBox, scaleX, scaleY) {
     }
 
-    function drawRect(p, props) {
+    function drawRect(p, props, viewBox, scaleX, scaleY) {
+      const x = parseFloat(props.x) || 0;
+      const y = parseFloat(props.y) || 0;
+      const width = parseFloat(props.width) || 0;
+      const height = parseFloat(props.height) || 0;
+
+      // Transform coordinates
+      const pos = transformCoord(x, y, viewBox, scaleX, scaleY);
+      const w = width * scaleX;
+      const h = height * scaleY;
+
+      // Apply styles
+      applyStyles(p, props);
+
+      // Draw the rectangle
+      p.rect(pos.x, pos.y, w, h);
     }
 
-    function drawCircle(p, d) {
-      const cx = parseFloat(d.cx) || 0;
-      const cy = parseFloat(d.cy) || 0;
-      const r = parseFloat(d.r) || 0;
+    function drawCircle(p, props, viewBox, scaleX, scaleY) {
+      const cx = parseFloat(props.cx) || 0;
+      const cy = parseFloat(props.cy) || 0;
+      const r = parseFloat(props.r) || 0;
 
-      p.ellipse(cx, cy, r * 2, r * 2);
+      // Transform coordinates
+      const center = transformCoord(cx, cy, viewBox, scaleX, scaleY);
+      const radiusX = r * scaleX;
+      const radiusY = r * scaleY;
+
+      // Apply styles
+      applyStyles(p, props);
+
+      // Draw the circle
+      p.ellipse(center.x, center.y, radiusX * 2, radiusY * 2);
     }
 
-    function drawEllipse(p, props) {
+    function drawEllipse(p, props, viewBox, scaleX, scaleY) {
+      const cx = parseFloat(props.cx) || 0;
+      const cy = parseFloat(props.cy) || 0;
+      const rx = parseFloat(props.rx) || 0;
+      const ry = parseFloat(props.ry) || 0;
+
+      // Transform coordinates
+      const center = transformCoord(cx, cy, viewBox, scaleX, scaleY);
+      const radiusX = rx * scaleX;
+      const radiusY = ry * scaleY;
+
+      // Apply styles
+      applyStyles(p, props);
+
+      // Draw the ellipse
+      p.ellipse(center.x, center.y, radiusX * 2, radiusY * 2);
     }
 
-    function drawLine(p, props) {
+    function drawLine(p, props, viewBox, scaleX, scaleY) {
+      const x1 = parseFloat(props.x1) || 0;
+      const y1 = parseFloat(props.y1) || 0;
+      const x2 = parseFloat(props.x2) || 0;
+      const y2 = parseFloat(props.y2) || 0;
+
+      // Transform coordinates
+      const start = transformCoord(x1, y1, viewBox, scaleX, scaleY);
+      const end = transformCoord(x2, y2, viewBox, scaleX, scaleY);
+
+      // Apply styles
+      applyStyles(p, props);
+
+      // Draw the line
+      p.line(start.x, start.y, end.x, end.y);
     }
 
-    function drawPolyline(p, props) {
+    function drawPolyline(p, props, viewBox, scaleX, scaleY) {
     }
 
-    function drawPolygon(p, props) {
+    function drawPolygon(p, props, viewBox, scaleX, scaleY) {
     }
 
-    function drawText(p, props) {
+    function drawText(p, props, viewBox, scaleX, scaleY) {
     }
 
     function applyStyles(p, props) {
