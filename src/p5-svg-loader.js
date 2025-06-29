@@ -207,6 +207,19 @@ import { parse } from "svg-parser";
     }
 
     function drawPolyline(p, props, viewBox, scaleX, scaleY) {
+      if (!props.points) return;
+
+      const points = parsePoints(props.points);
+
+      // Apply styles
+      applyStyles(p, props);
+
+      p.beginShape();
+      points.forEach((point) => {
+        const transformedPoint = transformCoord(point.x, point.y, viewBox, scaleX, scaleY);
+        p.vertex(transformedPoint.x, transformedPoint.y);
+      });
+      p.endShape();
     }
 
     function drawPolygon(p, props, viewBox, scaleX, scaleY) {
@@ -236,6 +249,20 @@ import { parse } from "svg-parser";
     }
 
     // More style properties can be added here (opacity, etc.)
+    }
+      
+    function parsePoints(pointsStr) {
+    return pointsStr
+      .trim()
+      .replace(/,/g, " ")
+      .replace(/\s+/g, " ")
+      .split(" ")
+      .reduce((acc, val, i, arr) => {
+        if (i % 2 === 0) {
+          acc.push({ x: parseFloat(val), y: parseFloat(arr[i + 1]) || 0 });
+        }
+        return acc;
+      }, []);
   }
 
     // Lifecycle hooks

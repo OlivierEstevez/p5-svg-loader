@@ -14,6 +14,9 @@
 
   <!-- Line -->
   <line x1="50" y1="50" x2="150" y2="150" stroke="#0000ff" stroke-width="4"/>
+
+  <polyline points="30,80 60,60 90,80 120,60 150,80 170,60" 
+            fill="none" stroke="yellow" stroke-width="3"/>
   
   <!-- Text -->
   <text x="100" y="180" text-anchor="middle" font-family="Arial, sans-serif" 
