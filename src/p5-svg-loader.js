@@ -269,7 +269,7 @@ import { parse } from "svg-parser";
       p.textAlign(p.LEFT);
       p.textFont("Arial");
       p.textStyle(p.NORMAL);
-      
+      p.drawingContext.globalAlpha = 1;
 
     // Set fill
     if (props.fill === "none") {
@@ -311,6 +311,14 @@ import { parse } from "svg-parser";
         default: // "start"
           p.textAlign(p.LEFT);
           break;
+      }
+    }
+      
+    // Set opacity
+    if (props.opacity !== undefined) {
+      const opacity = parseFloat(props.opacity);
+      if (opacity >= 0 && opacity <= 1) {
+        p.drawingContext.globalAlpha = opacity;
       }
     }
 
