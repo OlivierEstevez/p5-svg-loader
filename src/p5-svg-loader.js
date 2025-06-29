@@ -101,9 +101,10 @@ import { parse } from "svg-parser";
 
     function drawShape(p, node, viewBox, scaleX, scaleY) {
       const props = node.properties || {};
+      const children = node.children || {};
 
       // Set styles
-      //applyStyles(p, props);
+      applyStyles(p, props);
 
       switch (node.tagName) {
         case "path":
@@ -128,7 +129,7 @@ import { parse } from "svg-parser";
           drawPolygon(p, props, viewBox, scaleX, scaleY);
           break;
         case "text":
-          drawText(p, props, viewBox, scaleX, scaleY);
+          drawText(p, props, children, viewBox, scaleX, scaleY);
           break;
       }
     }
@@ -237,10 +238,39 @@ import { parse } from "svg-parser";
       p.endShape(p.CLOSE);
     }
 
-    function drawText(p, props, viewBox, scaleX, scaleY) {
+    function drawText(p, props, children, viewBox, scaleX, scaleY) {
+      console.log('drawText', props);
+      const x = parseFloat(props.x) || 0;
+      const y = parseFloat(props.y) || 0;
+      const textContent = children ? children[0].value : '';
+      
+      if (!textContent) return;
+
+      // Transform coordinates
+      const pos = transformCoord(x, y, viewBox, scaleX, scaleY);
+      
+      // Apply styles
+      applyStyles(p, props);
+
+      // Use the actual scale values to follow distortion aspect ratio
+      p.push();
+      p.translate(pos.x, pos.y);
+      p.scale(scaleX, scaleY);
+      // Draw text at origin since we've already translated
+      p.text(textContent, 0, 0);
+      
+      p.pop();
     }
 
     function applyStyles(p, props) {
+      p.noStroke();
+      p.noFill();
+      p.textSize(10);
+      p.textAlign(p.LEFT);
+      p.textFont("Arial");
+      p.textStyle(p.NORMAL);
+      
+
     // Set fill
     if (props.fill === "none") {
       p.noFill();
@@ -258,6 +288,30 @@ import { parse } from "svg-parser";
     // Set stroke width
     if (props["stroke-width"]) {
       p.strokeWeight(parseFloat(props["stroke-width"]));
+    }
+
+    // Text-specific properties
+    if (props["font-size"]) {
+      p.textSize(parseFloat(props["font-size"]));
+    }
+    
+    if (props["font-family"]) {
+      p.textFont(props["font-family"]);
+    }
+    
+    if (props["text-anchor"]) {
+      // Handle text alignment
+      switch (props["text-anchor"]) {
+        case "middle":
+          p.textAlign(p.CENTER);
+          break;
+        case "end":
+          p.textAlign(p.RIGHT);
+          break;
+        default: // "start"
+          p.textAlign(p.LEFT);
+          break;
+      }
     }
 
     // More style properties can be added here (opacity, etc.)
