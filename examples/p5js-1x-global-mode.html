@@ -1,50 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>p5-svg-loader - P5.js 1.x Global Mode</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        background-color: #222;
+        color: #fff;
+      }
+    </style>
+    <!-- Load p5.js 1.x -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <!-- Load our add-on library -->
+    <script src="../dist/p5-svg-loader.js"></script>
+  </head>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>p5-svg-loader - P5.js 1.x Global Mode</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: Arial, sans-serif;
-      background-color: #222;
-      color: #fff;
-    }
-  </style>
-  <!-- Load p5.js 1.x -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <!-- Load our add-on library -->
-  <script src="../dist/p5-svg-loader.js"></script>
-</head>
+  <body>
+    <h1>p5-svg-loader - P5.js 1.x Global Mode</h1>
+    <div id="sketch-container"></div>
 
-<body>
-  <h1>p5-svg-loader - P5.js 1.x Global Mode</h1>
-  <div id="sketch-container"></div>
+    <script>
+      let mySVG;
+      let svgElement;
 
-  <script>
-    let mySVG;
-    let svgElement;
+      function preload() {
+        // Load SVG file - this will be handled by our add-on
+        mySVG = loadSVG("sample.svg");
+      }
 
-    function preload() {
-      // Load SVG file - this will be handled by our add-on
-      mySVG = loadSVG('sample.svg');
-    }
+      function setup() {
+        const canvas = createCanvas(600, 400);
+        canvas.parent("sketch-container");
 
-    function setup() {
-      const canvas = createCanvas(600, 400);
-      canvas.parent('sketch-container');
+        console.log("SVG loaded:", mySVG);
+      }
 
-      console.log('SVG loaded:', mySVG);
-    }
-
-    function draw() {
-      background(240);
-      drawSVG(mySVG, 50, 50, 200, 200);
-    }
-  </script>
-</body>
-
+      function draw() {
+        background(240);
+        drawSVG(mySVG, 50, 50, 200, 200);
+      }
+    </script>
+  </body>
 </html>
