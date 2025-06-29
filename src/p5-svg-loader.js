@@ -61,17 +61,16 @@ import { parse } from "svg-parser";
     };
 
 
-    fn.drawSVG = function (svgData, x, y, width, height) {
-      const scaleX = (width !== null ? width : svgData.width) / svgData.viewBox.width;
-      const scaleY =
-        (height !== null ? height : svgData.height) / svgData.viewBox.height;
+    fn.drawSVG = function (svgData, x, y, width = svgData.width, height = svgData.height) {
+      const scaleX = width / svgData.viewBox.width;
+      const scaleY = height / svgData.viewBox.height;
 
       this.push();
       this.translate(x, y);
       this.scale(scaleX, scaleY);
       this.translate(-svgData.viewBox.x, -svgData.viewBox.y);
 
-      drawNode(svgData.svg);
+      drawNode(this, svgData.svg);
 
       this.pop();
     };
@@ -81,71 +80,105 @@ import { parse } from "svg-parser";
     };
 
     // Helper functions
-    function drawNode(node) {
+    function drawNode(p, node) {
       if (!node || !node.children) return;
-
+      
       // Process this node if it's a shape
       if (node.tagName && node.tagName !== 'svg') {
-        drawShape(node);
+        drawShape(p, node);
       }
 
       // Process children recursively
       if (node.children && node.children.length > 0) {
-        node.children.forEach((child) => drawNode(child));
+        node.children.forEach((child) => drawNode(p, child));
       }
     };
 
-    function drawShape(node) {
+    function drawShape(p, node) {
       const props = node.properties || {};
 
       // Set styles
-      // this.applyStyles(p, props);
+      applyStyles(p, props);
 
       switch (node.tagName) {
         case "path":
-          drawPath(props.d);
+          drawPath(p, props.d);
           break;
         case "rect":
-          drawRect(props);
+          drawRect(p, props);
           break;
         case "circle":
-          drawCircle(props);
+          drawCircle(p, props);
           break;
         case "ellipse":
-          drawEllipse(props);
+          drawEllipse(p, props);
           break;
         case "line":
-          drawLine(props);
+          drawLine(p, props);
           break;
         case "polyline":
-          drawPolyline(props);
+          drawPolyline(p, props);
           break;
         case "polygon":
-          drawPolygon(props);
+          drawPolygon(p, props);
+          break;
+        case "text":
+          drawText(p, props);
           break;
       }
     }
 
-    function drawPath(d) {
+    function drawPath(p, props) {
     }
 
-    function drawRect(d) {
+    function drawRect(p, props) {
     }
 
-    function drawCircle(d) {
+    function drawCircle(p, d) {
+      const cx = parseFloat(d.cx) || 0;
+      const cy = parseFloat(d.cy) || 0;
+      const r = parseFloat(d.r) || 0;
+
+      p.ellipse(cx, cy, r * 2, r * 2);
     }
 
-    function drawEllipse(d) {
+    function drawEllipse(p, props) {
     }
 
-    function drawLine(d) {
+    function drawLine(p, props) {
     }
 
-    function drawPolyline(d) {
+    function drawPolyline(p, props) {
     }
 
-    function drawPolygon(d) {
+    function drawPolygon(p, props) {
     }
+
+    function drawText(p, props) {
+    }
+
+    function applyStyles(p, props) {
+    // Set fill
+    if (props.fill === "none") {
+      p.noFill();
+    } else if (props.fill) {
+      p.fill(props.fill);
+    }
+
+    // Set stroke
+    if (props.stroke === "none") {
+      p.noStroke();
+    } else if (props.stroke) {
+      p.stroke(props.stroke);
+    }
+
+    // Set stroke width
+    if (props["stroke-width"]) {
+      p.strokeWeight(parseFloat(props["stroke-width"]));
+    }
+
+    // More style properties can be added here (opacity, etc.)
+  }
 
     // Lifecycle hooks
     lifecycles.presetup = function() {
