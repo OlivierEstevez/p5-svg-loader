@@ -470,7 +470,10 @@ import { parse } from "svg-parser";
             const c1 = transformCoord(cmd.x1, cmd.y1, viewBox, scaleX, scaleY);
             const c2 = transformCoord(cmd.x2, cmd.y2, viewBox, scaleX, scaleY);
             const cEnd = transformCoord(cmd.x, cmd.y, viewBox, scaleX, scaleY);
-            p.bezierVertex(c1.x, c1.y, c2.x, c2.y, cEnd.x, cEnd.y);
+            p.bezierOrder(3);
+            p.bezierVertex(c1.x, c1.y);
+            p.bezierVertex(c2.x, c2.y);
+            p.bezierVertex(cEnd.x, cEnd.y);
             controlX = cmd.x2;
             controlY = cmd.y2;
             currentX = cmd.x;
@@ -499,14 +502,11 @@ import { parse } from "svg-parser";
               scaleX,
               scaleY
             );
-            p.bezierVertex(
-              c1Rel.x,
-              c1Rel.y,
-              c2Rel.x,
-              c2Rel.y,
-              cEndRel.x,
-              cEndRel.y
-            );
+
+            p.bezierOrder(3);
+            p.bezierVertex(c1Rel.x, c1Rel.y);
+            p.bezierVertex(c2Rel.x, c2Rel.y);
+            p.bezierVertex(cEndRel.x, cEndRel.y);
             controlX = currentX + cmd.x2;
             controlY = currentY + cmd.y2;
             currentX += cmd.x;
@@ -533,7 +533,10 @@ import { parse } from "svg-parser";
             const s1 = transformCoord(sx1, sy1, viewBox, scaleX, scaleY);
             const s2 = transformCoord(cmd.x2, cmd.y2, viewBox, scaleX, scaleY);
             const sEnd = transformCoord(cmd.x, cmd.y, viewBox, scaleX, scaleY);
-            p.bezierVertex(s1.x, s1.y, s2.x, s2.y, sEnd.x, sEnd.y);
+            p.bezierOrder(3);
+            p.bezierVertex(s1.x, s1.y);
+            p.bezierVertex(s2.x, s2.y);
+            p.bezierVertex(sEnd.x, sEnd.y);
             controlX = cmd.x2;
             controlY = cmd.y2;
             currentX = cmd.x;
@@ -578,14 +581,10 @@ import { parse } from "svg-parser";
               scaleX,
               scaleY
             );
-            p.bezierVertex(
-              s1Rel.x,
-              s1Rel.y,
-              s2Rel.x,
-              s2Rel.y,
-              sEndRel.x,
-              sEndRel.y
-            );
+            p.bezierOrder(3);
+            p.bezierVertex(s1Rel.x, s1Rel.y);
+            p.bezierVertex(s2Rel.x, s2Rel.y);
+            p.bezierVertex(sEndRel.x, sEndRel.y);
             controlX = currentX + cmd.x2;
             controlY = currentY + cmd.y2;
             currentX += cmd.x;
@@ -593,9 +592,9 @@ import { parse } from "svg-parser";
             break;
 
           case "Q": // Quadratic Bezier (absolute)
-            p.bezierOrder(2);
             const q1 = transformCoord(cmd.x1, cmd.y1, viewBox, scaleX, scaleY);
             const qEnd = transformCoord(cmd.x, cmd.y, viewBox, scaleX, scaleY);
+            p.bezierOrder(2);
             p.bezierVertex(q1.x, q1.y);
             p.bezierVertex(qEnd.x, qEnd.y);
             controlX = cmd.x1;
@@ -605,7 +604,6 @@ import { parse } from "svg-parser";
             break;
 
           case "q": // Quadratic Bezier (relative)
-            p.bezierOrder(2);
             const q1Rel = transformCoord(
               currentX + cmd.x1,
               currentY + cmd.y1,
@@ -620,6 +618,7 @@ import { parse } from "svg-parser";
               scaleX,
               scaleY
             );
+            p.bezierOrder(2);
             p.bezierVertex(q1Rel.x, q1Rel.y);
             p.bezierVertex(qEndRel.x, qEndRel.y);
             controlX = currentX + cmd.x1;
@@ -645,9 +644,9 @@ import { parse } from "svg-parser";
                 ? 2 * currentY - controlY
                 : currentY;
 
-            p.bezierOrder(2);
             const t1 = transformCoord(tx1, ty1, viewBox, scaleX, scaleY);
             const tEnd = transformCoord(cmd.x, cmd.y, viewBox, scaleX, scaleY);
+            p.bezierOrder(2);
             p.bezierVertex(t1.x, t1.y);
             p.bezierVertex(tEnd.x, tEnd.y);
             controlX = tx1;
@@ -673,7 +672,6 @@ import { parse } from "svg-parser";
                 ? 2 * currentY - controlY
                 : currentY;
 
-            p.bezierOrder(2);
             const t1Rel = transformCoord(
               tx1Rel,
               ty1Rel,
@@ -688,6 +686,7 @@ import { parse } from "svg-parser";
               scaleX,
               scaleY
             );
+            p.bezierOrder(2);
             p.bezierVertex(t1Rel.x, t1Rel.y);
             p.bezierVertex(tEndRel.x, tEndRel.y);
             controlX = tx1Rel;
