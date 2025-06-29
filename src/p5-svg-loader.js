@@ -270,12 +270,12 @@ import { parse } from "svg-parser";
       const outerPath = pathSegments[0];
 
       p.beginShape();
-      drawPathCommands(p, outerPath, false);
+      drawPathCommands(p, outerPath, false, viewBox, scaleX, scaleY);
 
       // Draw all subsequent paths as contours (holes)
       for (let i = 1; i < pathSegments.length; i++) {
         p.beginContour();
-        drawPathCommands(p, pathSegments[i], true);
+        drawPathCommands(p, pathSegments[i], true, viewBox, scaleX, scaleY);
         p.endContour();
       }
 
@@ -316,7 +316,7 @@ import { parse } from "svg-parser";
     return subpaths;
     }
     
-    function drawPathCommands(p, pathString, isContour) {
+    function drawPathCommands(p, pathString, isContour, viewBox, scaleX, scaleY) {
     // Parse the commands for this path segment
     const commands = parsePath(pathString);
 
@@ -337,7 +337,8 @@ import { parse } from "svg-parser";
           currentY = cmd.y;
           firstX = currentX;
           firstY = currentY;
-          p.vertex(currentX, currentY);
+          const movePos = transformCoord(currentX, currentY, viewBox, scaleX, scaleY);
+          p.vertex(movePos.x, movePos.y);
           break;
 
         case "m": // Move To (relative)
@@ -345,43 +346,53 @@ import { parse } from "svg-parser";
           currentY += cmd.y;
           firstX = currentX;
           firstY = currentY;
-          p.vertex(currentX, currentY);
+          const moveRelPos = transformCoord(currentX, currentY, viewBox, scaleX, scaleY);
+          p.vertex(moveRelPos.x, moveRelPos.y);
           break;
 
         case "L": // Line To (absolute)
           currentX = cmd.x;
           currentY = cmd.y;
-          p.vertex(currentX, currentY);
+          const linePos = transformCoord(currentX, currentY, viewBox, scaleX, scaleY);
+          p.vertex(linePos.x, linePos.y);
           break;
 
         case "l": // Line To (relative)
           currentX += cmd.x;
           currentY += cmd.y;
-          p.vertex(currentX, currentY);
+          const lineRelPos = transformCoord(currentX, currentY, viewBox, scaleX, scaleY);
+          p.vertex(lineRelPos.x, lineRelPos.y);
           break;
 
         case "H": // Horizontal Line (absolute)
           currentX = cmd.x;
-          p.vertex(currentX, currentY);
+          const hPos = transformCoord(currentX, currentY, viewBox, scaleX, scaleY);
+          p.vertex(hPos.x, hPos.y);
           break;
 
         case "h": // Horizontal Line (relative)
           currentX += cmd.x;
-          p.vertex(currentX, currentY);
+          const hRelPos = transformCoord(currentX, currentY, viewBox, scaleX, scaleY);
+          p.vertex(hRelPos.x, hRelPos.y);
           break;
 
         case "V": // Vertical Line (absolute)
           currentY = cmd.y;
-          p.vertex(currentX, currentY);
+          const vPos = transformCoord(currentX, currentY, viewBox, scaleX, scaleY);
+          p.vertex(vPos.x, vPos.y);
           break;
 
         case "v": // Vertical Line (relative)
           currentY += cmd.y;
-          p.vertex(currentX, currentY);
+          const vRelPos = transformCoord(currentX, currentY, viewBox, scaleX, scaleY);
+          p.vertex(vRelPos.x, vRelPos.y);
           break;
 
         case "C": // Cubic Bezier (absolute)
-          p.bezierVertex(cmd.x1, cmd.y1, cmd.x2, cmd.y2, cmd.x, cmd.y);
+          const c1 = transformCoord(cmd.x1, cmd.y1, viewBox, scaleX, scaleY);
+          const c2 = transformCoord(cmd.x2, cmd.y2, viewBox, scaleX, scaleY);
+          const cEnd = transformCoord(cmd.x, cmd.y, viewBox, scaleX, scaleY);
+          p.bezierVertex(c1.x, c1.y, c2.x, c2.y, cEnd.x, cEnd.y);
           controlX = cmd.x2;
           controlY = cmd.y2;
           currentX = cmd.x;
@@ -389,14 +400,10 @@ import { parse } from "svg-parser";
           break;
 
         case "c": // Cubic Bezier (relative)
-          p.bezierVertex(
-            currentX + cmd.x1,
-            currentY + cmd.y1,
-            currentX + cmd.x2,
-            currentY + cmd.y2,
-            currentX + cmd.x,
-            currentY + cmd.y
-          );
+          const c1Rel = transformCoord(currentX + cmd.x1, currentY + cmd.y1, viewBox, scaleX, scaleY);
+          const c2Rel = transformCoord(currentX + cmd.x2, currentY + cmd.y2, viewBox, scaleX, scaleY);
+          const cEndRel = transformCoord(currentX + cmd.x, currentY + cmd.y, viewBox, scaleX, scaleY);
+          p.bezierVertex(c1Rel.x, c1Rel.y, c2Rel.x, c2Rel.y, cEndRel.x, cEndRel.y);
           controlX = currentX + cmd.x2;
           controlY = currentY + cmd.y2;
           currentX += cmd.x;
@@ -420,7 +427,10 @@ import { parse } from "svg-parser";
               ? 2 * currentY - controlY
               : currentY;
 
-          p.bezierVertex(sx1, sy1, cmd.x2, cmd.y2, cmd.x, cmd.y);
+          const s1 = transformCoord(sx1, sy1, viewBox, scaleX, scaleY);
+          const s2 = transformCoord(cmd.x2, cmd.y2, viewBox, scaleX, scaleY);
+          const sEnd = transformCoord(cmd.x, cmd.y, viewBox, scaleX, scaleY);
+          p.bezierVertex(s1.x, s1.y, s2.x, s2.y, sEnd.x, sEnd.y);
           controlX = cmd.x2;
           controlY = cmd.y2;
           currentX = cmd.x;
@@ -444,14 +454,10 @@ import { parse } from "svg-parser";
               ? 2 * currentY - controlY
               : currentY;
 
-          p.bezierVertex(
-            sx1Rel,
-            sy1Rel,
-            currentX + cmd.x2,
-            currentY + cmd.y2,
-            currentX + cmd.x,
-            currentY + cmd.y
-          );
+          const s1Rel = transformCoord(sx1Rel, sy1Rel, viewBox, scaleX, scaleY);
+          const s2Rel = transformCoord(currentX + cmd.x2, currentY + cmd.y2, viewBox, scaleX, scaleY);
+          const sEndRel = transformCoord(currentX + cmd.x, currentY + cmd.y, viewBox, scaleX, scaleY);
+          p.bezierVertex(s1Rel.x, s1Rel.y, s2Rel.x, s2Rel.y, sEndRel.x, sEndRel.y);
           controlX = currentX + cmd.x2;
           controlY = currentY + cmd.y2;
           currentX += cmd.x;
@@ -460,8 +466,10 @@ import { parse } from "svg-parser";
 
         case "Q": // Quadratic Bezier (absolute)
           p.bezierOrder(2);
-          p.bezierVertex(cmd.x1, cmd.y1);
-          p.bezierVertex(cmd.x, cmd.y);
+          const q1 = transformCoord(cmd.x1, cmd.y1, viewBox, scaleX, scaleY);
+          const qEnd = transformCoord(cmd.x, cmd.y, viewBox, scaleX, scaleY);
+          p.bezierVertex(q1.x, q1.y);
+          p.bezierVertex(qEnd.x, qEnd.y);
           controlX = cmd.x1;
           controlY = cmd.y1;
           currentX = cmd.x;
@@ -470,8 +478,10 @@ import { parse } from "svg-parser";
 
         case "q": // Quadratic Bezier (relative)
           p.bezierOrder(2);
-          p.bezierVertex(currentX + cmd.x1, currentY + cmd.y1);
-          p.bezierVertex(currentX + cmd.x, currentY + cmd.y);
+          const q1Rel = transformCoord(currentX + cmd.x1, currentY + cmd.y1, viewBox, scaleX, scaleY);
+          const qEndRel = transformCoord(currentX + cmd.x, currentY + cmd.y, viewBox, scaleX, scaleY);
+          p.bezierVertex(q1Rel.x, q1Rel.y);
+          p.bezierVertex(qEndRel.x, qEndRel.y);
           controlX = currentX + cmd.x1;
           controlY = currentY + cmd.y1;
           currentX += cmd.x;
@@ -496,8 +506,10 @@ import { parse } from "svg-parser";
               : currentY;
 
           p.bezierOrder(2);
-          p.bezierVertex(tx1, ty1);
-          p.bezierVertex(cmd.x, cmd.y);
+          const t1 = transformCoord(tx1, ty1, viewBox, scaleX, scaleY);
+          const tEnd = transformCoord(cmd.x, cmd.y, viewBox, scaleX, scaleY);
+          p.bezierVertex(t1.x, t1.y);
+          p.bezierVertex(tEnd.x, tEnd.y);
           controlX = tx1;
           controlY = ty1;
           currentX = cmd.x;
@@ -522,8 +534,10 @@ import { parse } from "svg-parser";
               : currentY;
 
           p.bezierOrder(2);
-          p.bezierVertex(tx1Rel, ty1Rel);
-          p.bezierVertex(currentX + cmd.x, currentY + cmd.y);
+          const t1Rel = transformCoord(tx1Rel, ty1Rel, viewBox, scaleX, scaleY);
+          const tEndRel = transformCoord(currentX + cmd.x, currentY + cmd.y, viewBox, scaleX, scaleY);
+          p.bezierVertex(t1Rel.x, t1Rel.y);
+          p.bezierVertex(tEndRel.x, tEndRel.y);
           controlX = tx1Rel;
           controlY = ty1Rel;
           currentX += cmd.x;
@@ -535,21 +549,24 @@ import { parse } from "svg-parser";
           // This is a simplified implementation
           currentX = cmd.x;
           currentY = cmd.y;
-          p.vertex(currentX, currentY);
+          const aPos = transformCoord(currentX, currentY, viewBox, scaleX, scaleY);
+          p.vertex(aPos.x, aPos.y);
           break;
 
         case "a": // Elliptical Arc (relative)
           // Simplified arc implementation
           currentX += cmd.x;
           currentY += cmd.y;
-          p.vertex(currentX, currentY);
+          const aRelPos = transformCoord(currentX, currentY, viewBox, scaleX, scaleY);
+          p.vertex(aRelPos.x, aRelPos.y);
           break;
 
         case "Z": // Close Path
         case "z":
           // For contours, we don't need to explicitly close the path
           if (!isContour) {
-            p.vertex(firstX, firstY); // Connect back to the first point
+            const closePos = transformCoord(firstX, firstY, viewBox, scaleX, scaleY);
+            p.vertex(closePos.x, closePos.y); // Connect back to the first point
           }
           break;
       }
