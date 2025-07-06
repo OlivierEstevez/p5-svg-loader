@@ -771,6 +771,7 @@ import { parse } from "svg-parser";
           .slice(1)
           .trim()
           .replace(/,/g, " ")
+          .replace(/([+-]?\d*\.?\d+)([+-])/g, "$1 $2")
           .replace(/\s+/g, " ")
           .split(" ")
           .filter((arg) => arg !== "")
