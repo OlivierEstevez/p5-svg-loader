@@ -114,8 +114,6 @@ import { parse } from "svg-parser";
       const props = node.properties || {};
       const children = node.children || {};
 
-      console.log("drawShape", node);
-
       // Set styles
       applyStyles(p, props);
 
@@ -289,16 +287,42 @@ import { parse } from "svg-parser";
       // Parse the SVG path commands
       const pathSegments = splitPathIntoSubpaths(d);
 
+      // Track position across all path segments
+      let globalCurrentX = 0;
+      let globalCurrentY = 0;
+
       // First path is always the outer path
       const outerPath = pathSegments[0];
 
       p.beginShape();
-      drawPathCommands(p, outerPath, false, viewBox, scaleX, scaleY);
+      const outerResult = drawPathCommands(
+        p,
+        outerPath,
+        false,
+        viewBox,
+        scaleX,
+        scaleY,
+        globalCurrentX,
+        globalCurrentY
+      );
+      globalCurrentX = outerResult.currentX;
+      globalCurrentY = outerResult.currentY;
 
       // Draw all subsequent paths as contours (holes)
       for (let i = 1; i < pathSegments.length; i++) {
         p.beginContour();
-        drawPathCommands(p, pathSegments[i], true, viewBox, scaleX, scaleY);
+        const contourResult = drawPathCommands(
+          p,
+          pathSegments[i],
+          true,
+          viewBox,
+          scaleX,
+          scaleY,
+          globalCurrentX,
+          globalCurrentY
+        );
+        globalCurrentX = contourResult.currentX;
+        globalCurrentY = contourResult.currentY;
         p.endContour();
       }
 
@@ -345,15 +369,17 @@ import { parse } from "svg-parser";
       isContour,
       viewBox,
       scaleX,
-      scaleY
+      scaleY,
+      initialX = 0,
+      initialY = 0
     ) {
       // Parse the commands for this path segment
       const commands = parsePath(pathString);
 
-      let currentX = 0;
-      let currentY = 0;
-      let firstX = 0;
-      let firstY = 0;
+      let currentX = initialX;
+      let currentY = initialY;
+      let firstX = initialX;
+      let firstY = initialY;
       let controlX = 0;
       let controlY = 0;
       let lastCommand = "";
@@ -750,8 +776,21 @@ import { parse } from "svg-parser";
         commands[commands.length - 1].type !== "Z" &&
         commands[commands.length - 1].type !== "z"
       ) {
-        p.vertex(firstX, firstY);
+        const closePos = transformCoord(
+          firstX,
+          firstY,
+          viewBox,
+          scaleX,
+          scaleY
+        );
+        p.vertex(closePos.x, closePos.y);
       }
+
+      // Return the final position for the next path segment
+      return {
+        currentX: currentX,
+        currentY: currentY,
+      };
     }
 
     function parsePath(d) {
