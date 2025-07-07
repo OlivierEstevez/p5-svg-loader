@@ -797,7 +797,7 @@ import { parse } from "svg-parser";
       if (!d) return [];
 
       // Tokenize the path data
-      const tokens = d.match(/[a-df-z][^a-df-z]*/gi) || [];
+      const tokens = d.match(/[a-z][^a-z]*/gi) || [];
       const commands = [];
 
       // Keep track of current position to convert H and V commands
