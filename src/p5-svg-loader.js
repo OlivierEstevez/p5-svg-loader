@@ -810,7 +810,12 @@ import { parse } from "svg-parser";
           .slice(1)
           .trim()
           .replace(/,/g, " ")
-          .replace(/([+-]?\d*\.?\d+)([+-])/g, "$1 $2")
+          // Handle cases like "3.43.928" -> "3.43 .928"
+          .replace(/(\d+\.\d+)(\.\d+)/g, "$1 $2")
+          // Handle cases like "1.234.56.78" (multiple decimals)
+          .replace(/(\d+\.\d+)(\.\d+)/g, "$1 $2") // Run twice for multiple occurrences
+          // Base number separation
+          .replace(/([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)([+-])/g, "$1 $2")
           .replace(/\s+/g, " ")
           .split(" ")
           .filter((arg) => arg !== "")
