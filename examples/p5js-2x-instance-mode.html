@@ -72,9 +72,16 @@
           p.fill(255, 0, 0);
           p.strokeWeight(20);
           p.stroke(0, 255, 0);
-          p.drawSVG(mySVG, 0, 0, 500, 500, {
+          p.drawSVG(mySVG, 50, 50, mySVG.viewBox.width, mySVG.viewBox.height, {
             ignoreStyles: false,
           });
+          p.drawSVGDebug(
+            mySVG,
+            50,
+            50,
+            mySVG.viewBox.width,
+            mySVG.viewBox.height
+          );
         };
 
         p.draw = function () {
