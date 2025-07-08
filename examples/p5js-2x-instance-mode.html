@@ -31,7 +31,7 @@
       // Instance mode sketch
       const sketchInstance = (p) => {
         p.setup = async function () {
-          const canvas = p.createCanvas(600, 400);
+          const canvas = p.createCanvas(1200, 1200);
           canvas.parent("sketch-container");
 
           mySVG = await p.loadSVG("./sample.svg");
@@ -39,7 +39,42 @@
 
           p.background(240);
 
-          p.drawSVG(mySVG, 0, 0, 500);
+          // Draw grid with 10px increments
+          p.stroke(200);
+          p.strokeWeight(0.5);
+
+          // Vertical lines
+          for (let x = 0; x <= p.width; x += 10) {
+            p.line(x, 0, x, p.height);
+            // Add labels every 50px
+            if (x % 50 === 0) {
+              p.noStroke();
+              p.fill(100);
+              p.textSize(10);
+              p.text(x, x + 2, 15);
+              p.stroke(200);
+            }
+          }
+
+          // Horizontal lines
+          for (let y = 0; y <= p.height; y += 10) {
+            p.line(0, y, p.width, y);
+            // Add labels every 50px
+            if (y % 50 === 0) {
+              p.noStroke();
+              p.fill(100);
+              p.textSize(10);
+              p.text(y, 2, y - 5);
+              p.stroke(200);
+            }
+          }
+
+          p.fill(255, 0, 0);
+          p.strokeWeight(20);
+          p.stroke(0, 255, 0);
+          p.drawSVG(mySVG, 0, 0, 500, 500, {
+            ignoreStyles: false,
+          });
         };
 
         p.draw = function () {
