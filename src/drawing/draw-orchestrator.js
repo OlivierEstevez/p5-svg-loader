@@ -2,7 +2,7 @@
  * Main drawing orchestrator that coordinates all SVG element drawing
  */
 
-import { applyStyles } from "../utils/transform.js";
+import { applyStyles } from "../core/utils.js";
 import {
   drawRect,
   drawCircle,

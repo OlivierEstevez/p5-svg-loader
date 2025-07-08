@@ -4,7 +4,7 @@
 
 import { SVG } from "./core/SVG.js";
 import { drawNode } from "./drawing/draw-orchestrator.js";
-import { drawDebugNode } from "./debug/debug-drawing.js";
+import { drawDebugNode } from "./drawing/debug-drawing.js";
 
 // Shared utility functions to avoid duplication
 function createDrawSVG() {

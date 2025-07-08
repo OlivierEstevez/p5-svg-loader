@@ -2,11 +2,7 @@
  * Drawing functions for basic SVG shapes
  */
 
-import {
-  transformCoord,
-  applyStyles,
-  parsePoints,
-} from "../utils/transform.js";
+import { transformCoord, applyStyles, parsePoints } from "../core/utils.js";
 
 export function drawRect(p, props, viewBox, scaleX, scaleY) {
   const x = parseFloat(props.x) || 0;

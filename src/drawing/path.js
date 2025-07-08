@@ -2,7 +2,7 @@
  * Path parsing and drawing functions for SVG paths
  */
 
-import { transformCoord } from "../utils/transform.js";
+import { transformCoord } from "../core/utils.js";
 
 export function drawPath(p, d, viewBox, scaleX, scaleY) {
   if (!d) return;

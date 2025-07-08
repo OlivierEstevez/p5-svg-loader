@@ -2,8 +2,8 @@
  * Debug drawing functions for visualizing SVG element bounds
  */
 
-import { transformCoord, parsePoints } from "../utils/transform.js";
-import { parsePath } from "../drawing/path.js";
+import { transformCoord, parsePoints } from "../core/utils.js";
+import { parsePath } from "./path.js";
 
 export function drawDebugNode(p, svgData, viewBox, scaleX, scaleY) {
   if (!svgData) return;

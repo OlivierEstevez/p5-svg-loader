@@ -1,5 +1,5 @@
 /**
- * Utility functions for coordinate transformations and parsing
+ * Utility functions: Coordinate transformations, parsing and styling
  */
 
 export function transformCoord(x, y, viewBox, scaleX, scaleY) {
