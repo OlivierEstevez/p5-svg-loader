@@ -26,25 +26,24 @@
     <script>
       let sketch;
       let mySVG;
-      let svgElement;
 
       // Instance mode sketch
       const sketchInstance = (p) => {
         p.preload = function () {
-          mySVG = p.loadSVG("sample.svg");
+          mySVG = p.loadSVG("./sample.svg", (e) => {
+            console.log("SVG loaded:", e);
+          });
         };
 
         p.setup = function () {
-          const canvas = p.createCanvas(600, 400);
+          const canvas = p.createCanvas(1200, 1200);
           canvas.parent("sketch-container");
 
-          console.log("SVG loaded:", mySVG);
+          p.background(240);
+          p.drawSVG(mySVG, 50, 50, mySVG.width, mySVG.height);
         };
 
-        p.draw = function () {
-          p.background(240);
-          p.drawSVG(mySVG, 50, 50, 200, 200);
-        };
+        p.draw = function () {};
 
         // Store reference to the instance
         sketch = p;

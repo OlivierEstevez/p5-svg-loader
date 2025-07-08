@@ -27,22 +27,21 @@
       let mySVG;
       let svgElement;
 
-      function preload() {
-        // Load SVG file - this will be handled by our add-on
-        mySVG = loadSVG("sample.svg");
-      }
+      preload = function () {
+        mySVG = loadSVG("./sample.svg", (e) => {
+          console.log("SVG loaded:", e);
+        });
+      };
 
       function setup() {
-        const canvas = createCanvas(600, 400);
+        const canvas = createCanvas(1200, 1200);
         canvas.parent("sketch-container");
 
-        console.log("SVG loaded:", mySVG);
+        background(240);
+        drawSVG(mySVG, 50, 50, mySVG.width, mySVG.height);
       }
 
-      function draw() {
-        background(240);
-        drawSVG(mySVG, 50, 50, 200, 200);
-      }
+      function draw() {}
     </script>
   </body>
 </html>
