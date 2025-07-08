@@ -219,10 +219,14 @@ export function drawPathCommands(
         const c1 = transformCoord(cmd.x1, cmd.y1, viewBox, scaleX, scaleY);
         const c2 = transformCoord(cmd.x2, cmd.y2, viewBox, scaleX, scaleY);
         const cEnd = transformCoord(cmd.x, cmd.y, viewBox, scaleX, scaleY);
-        p.bezierOrder(3);
-        p.bezierVertex(c1.x, c1.y);
-        p.bezierVertex(c2.x, c2.y);
-        p.bezierVertex(cEnd.x, cEnd.y);
+        if (p.bezierOrder) {
+          p.bezierOrder(3);
+          p.bezierVertex(c1.x, c1.y);
+          p.bezierVertex(c2.x, c2.y);
+          p.bezierVertex(cEnd.x, cEnd.y);
+        } else {
+          p.bezierVertex(c1.x, c1.y, c2.x, c2.y, cEnd.x, cEnd.y);
+        }
         controlX = cmd.x2;
         controlY = cmd.y2;
         currentX = cmd.x;
@@ -252,10 +256,21 @@ export function drawPathCommands(
           scaleY
         );
 
-        p.bezierOrder(3);
-        p.bezierVertex(c1Rel.x, c1Rel.y);
-        p.bezierVertex(c2Rel.x, c2Rel.y);
-        p.bezierVertex(cEndRel.x, cEndRel.y);
+        if (p.bezierOrder) {
+          p.bezierOrder(3);
+          p.bezierVertex(c1Rel.x, c1Rel.y);
+          p.bezierVertex(c2Rel.x, c2Rel.y);
+          p.bezierVertex(cEndRel.x, cEndRel.y);
+        } else {
+          p.bezierVertex(
+            c1Rel.x,
+            c1Rel.y,
+            c2Rel.x,
+            c2Rel.y,
+            cEndRel.x,
+            cEndRel.y
+          );
+        }
         controlX = currentX + cmd.x2;
         controlY = currentY + cmd.y2;
         currentX += cmd.x;
@@ -282,10 +297,14 @@ export function drawPathCommands(
         const s1 = transformCoord(sx1, sy1, viewBox, scaleX, scaleY);
         const s2 = transformCoord(cmd.x2, cmd.y2, viewBox, scaleX, scaleY);
         const sEnd = transformCoord(cmd.x, cmd.y, viewBox, scaleX, scaleY);
-        p.bezierOrder(3);
-        p.bezierVertex(s1.x, s1.y);
-        p.bezierVertex(s2.x, s2.y);
-        p.bezierVertex(sEnd.x, sEnd.y);
+        if (p.bezierOrder) {
+          p.bezierOrder(3);
+          p.bezierVertex(s1.x, s1.y);
+          p.bezierVertex(s2.x, s2.y);
+          p.bezierVertex(sEnd.x, sEnd.y);
+        } else {
+          p.bezierVertex(s1.x, s1.y, s2.x, s2.y, sEnd.x, sEnd.y);
+        }
         controlX = cmd.x2;
         controlY = cmd.y2;
         currentX = cmd.x;
@@ -324,10 +343,21 @@ export function drawPathCommands(
           scaleX,
           scaleY
         );
-        p.bezierOrder(3);
-        p.bezierVertex(s1Rel.x, s1Rel.y);
-        p.bezierVertex(s2Rel.x, s2Rel.y);
-        p.bezierVertex(sEndRel.x, sEndRel.y);
+        if (p.bezierOrder) {
+          p.bezierOrder(3);
+          p.bezierVertex(s1Rel.x, s1Rel.y);
+          p.bezierVertex(s2Rel.x, s2Rel.y);
+          p.bezierVertex(sEndRel.x, sEndRel.y);
+        } else {
+          p.bezierVertex(
+            s1Rel.x,
+            s1Rel.y,
+            s2Rel.x,
+            s2Rel.y,
+            sEndRel.x,
+            sEndRel.y
+          );
+        }
         controlX = currentX + cmd.x2;
         controlY = currentY + cmd.y2;
         currentX += cmd.x;
@@ -337,9 +367,13 @@ export function drawPathCommands(
       case "Q": // Quadratic Bezier (absolute)
         const q1 = transformCoord(cmd.x1, cmd.y1, viewBox, scaleX, scaleY);
         const qEnd = transformCoord(cmd.x, cmd.y, viewBox, scaleX, scaleY);
-        p.bezierOrder(2);
-        p.bezierVertex(q1.x, q1.y);
-        p.bezierVertex(qEnd.x, qEnd.y);
+        if (p.bezierOrder) {
+          p.bezierOrder(2);
+          p.bezierVertex(q1.x, q1.y);
+          p.bezierVertex(qEnd.x, qEnd.y);
+        } else {
+          p.bezierVertex(q1.x, q1.y, qEnd.x, qEnd.y);
+        }
         controlX = cmd.x1;
         controlY = cmd.y1;
         currentX = cmd.x;
@@ -361,9 +395,13 @@ export function drawPathCommands(
           scaleX,
           scaleY
         );
-        p.bezierOrder(2);
-        p.bezierVertex(q1Rel.x, q1Rel.y);
-        p.bezierVertex(qEndRel.x, qEndRel.y);
+        if (p.bezierOrder) {
+          p.bezierOrder(2);
+          p.bezierVertex(q1Rel.x, q1Rel.y);
+          p.bezierVertex(qEndRel.x, qEndRel.y);
+        } else {
+          p.bezierVertex(q1Rel.x, q1Rel.y, qEndRel.x, qEndRel.y);
+        }
         controlX = currentX + cmd.x1;
         controlY = currentY + cmd.y1;
         currentX += cmd.x;
@@ -389,9 +427,13 @@ export function drawPathCommands(
 
         const t1 = transformCoord(tx1, ty1, viewBox, scaleX, scaleY);
         const tEnd = transformCoord(cmd.x, cmd.y, viewBox, scaleX, scaleY);
-        p.bezierOrder(2);
-        p.bezierVertex(t1.x, t1.y);
-        p.bezierVertex(tEnd.x, tEnd.y);
+        if (p.bezierOrder) {
+          p.bezierOrder(2);
+          p.bezierVertex(t1.x, t1.y);
+          p.bezierVertex(tEnd.x, tEnd.y);
+        } else {
+          p.bezierVertex(t1.x, t1.y, tEnd.x, tEnd.y);
+        }
         controlX = tx1;
         controlY = ty1;
         currentX = cmd.x;
@@ -423,9 +465,13 @@ export function drawPathCommands(
           scaleX,
           scaleY
         );
-        p.bezierOrder(2);
-        p.bezierVertex(t1Rel.x, t1Rel.y);
-        p.bezierVertex(tEndRel.x, tEndRel.y);
+        if (p.bezierOrder) {
+          p.bezierOrder(2);
+          p.bezierVertex(t1Rel.x, t1Rel.y);
+          p.bezierVertex(tEndRel.x, tEndRel.y);
+        } else {
+          p.bezierVertex(t1Rel.x, t1Rel.y, tEndRel.x, tEndRel.y);
+        }
         controlX = tx1Rel;
         controlY = ty1Rel;
         currentX += cmd.x;

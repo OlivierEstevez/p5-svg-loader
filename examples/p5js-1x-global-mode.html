@@ -27,14 +27,14 @@
       let mySVG;
       let svgElement;
 
-      p.preload = function () {
-        mySVG = p.loadSVG("./sample.svg", (e) => {
+      preload = function () {
+        mySVG = loadSVG("./sample.svg", (e) => {
           console.log("SVG loaded:", e);
         });
       };
 
       function setup() {
-        const canvas = createCanvas(600, 400);
+        const canvas = createCanvas(1200, 1200);
         canvas.parent("sketch-container");
 
         background(240);
