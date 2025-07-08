@@ -6,27 +6,9 @@ import { SVG } from "./core/SVG.js";
 import { drawNode } from "./drawing/draw-orchestrator.js";
 import { drawDebugNode } from "./debug/debug-drawing.js";
 
-// P5.js 2.0 addon definition
-export const p5SvgLoaderAddon = function (p5, fn, lifecycles) {
-  // Register SVG class
-  p5.prototype.SVG = SVG;
-
-  // Main SVG loader function
-  fn.loadSVG = async function (filename, callback) {
-    try {
-      const response = await fetch(filename);
-      const svgContent = await response.text();
-      const result = new this.SVG(svgContent);
-      if (callback) {
-        callback(result);
-      }
-      return result;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  fn.drawSVG = function (
+// Shared utility functions to avoid duplication
+function createDrawSVG() {
+  return function (
     svgData,
     x,
     y,
@@ -47,8 +29,10 @@ export const p5SvgLoaderAddon = function (p5, fn, lifecycles) {
 
     this.pop();
   };
+}
 
-  fn.drawSVGDebug = function (svgData, x, y, width, height) {
+function createDrawSVGDebug() {
+  return function (svgData, x, y, width, height) {
     const effectiveViewBox = svgData.viewBox || svgData._parentSVG.viewBox;
     const scaleX = width / effectiveViewBox.width;
     const scaleY = height / effectiveViewBox.height;
@@ -61,6 +45,30 @@ export const p5SvgLoaderAddon = function (p5, fn, lifecycles) {
 
     this.pop();
   };
+}
+
+// P5.js 2.0 addon definition
+export const p5SvgLoaderAddon = function (p5, fn, lifecycles) {
+  // Register SVG class
+  p5.prototype.SVG = SVG;
+
+  // Main SVG loader function
+  fn.loadSVG = async function (filename, callback) {
+    try {
+      const response = await fetch(filename);
+      const svgContent = await response.text();
+      const result = new this.SVG(svgContent);
+      if (callback) {
+        callback(result);
+      }
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  fn.drawSVG = createDrawSVG();
+  fn.drawSVGDebug = createDrawSVGDebug();
 
   // Lifecycle hooks
   lifecycles.presetup = function () {
@@ -74,24 +82,37 @@ export function createLegacyCompatibility(p5) {
     "p5-svg-loader: P5.js 2.0 addon system not available, falling back to 1.x compatibility"
   );
 
-  // Legacy P5.js 1.x support
+  // Register SVG class
+  p5.prototype.SVG = SVG;
+
+  // Fixed P5.js 1.x loadSVG function
   p5.prototype.loadSVG = function (filename, callback) {
-    console.log(`Loading SVG file: ${filename}`);
+    let result = {};
 
-    const result = {
-      data: null,
-      error: null,
-      filename: filename,
-    };
+    fetch(filename)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.text();
+      })
+      .then((svgContent) => {
+        try {
+          const svgObject = new this.SVG(svgContent);
+          Object.assign(result, svgObject);
 
-    // Simulate async loading
-    setTimeout(() => {
-      result.data = `<svg>Sample SVG content for ${filename}</svg>`;
-      if (callback) {
-        callback(result);
-      }
-      this._decrementPreload();
-    }, 100);
+          if (callback) {
+            callback(result);
+          }
+        } catch (error) {
+          console.error("Error parsing SVG:", error);
+        }
+        this._decrementPreload();
+      })
+      .catch((error) => {
+        console.error("Error loading SVG:", error);
+        this._decrementPreload();
+      });
 
     return result;
   };
@@ -101,11 +122,8 @@ export function createLegacyCompatibility(p5) {
     p5.prototype.registerPreloadMethod("loadSVG", p5.prototype);
   }
 
-  p5.prototype.drawSVG = function (svgData, x, y, width, height) {
-    this.fill(255, 0, 0);
-    this.noStroke();
-    this.rect(x, y, width, height);
-  };
+  p5.prototype.drawSVG = createDrawSVG();
+  p5.prototype.drawSVGDebug = createDrawSVGDebug();
 
   // Legacy lifecycle hooks
   if (p5.prototype.registerMethod) {
