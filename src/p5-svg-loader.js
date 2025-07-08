@@ -69,7 +69,10 @@ import { parse } from "svg-parser";
       x,
       y,
       width = svgData.width,
-      height = svgData.height
+      height = svgData.height,
+      options = {
+        ignoreStyles: false,
+      }
     ) {
       const scaleX = width / svgData.viewBox.width;
       const scaleY = height / svgData.viewBox.height;
@@ -77,7 +80,7 @@ import { parse } from "svg-parser";
       this.push();
       this.translate(x, y);
 
-      drawNode(this, svgData.svg, svgData.viewBox, scaleX, scaleY);
+      drawNode(this, svgData.svg, svgData.viewBox, scaleX, scaleY, options);
 
       this.pop();
     };
@@ -94,28 +97,29 @@ import { parse } from "svg-parser";
       };
     }
 
-    function drawNode(p, node, viewBox, scaleX, scaleY) {
+    function drawNode(p, node, viewBox, scaleX, scaleY, options) {
       if (!node || !node.children) return;
 
       // Process this node if it's a shape
       if (node.tagName && node.tagName !== "svg") {
-        drawShape(p, node, viewBox, scaleX, scaleY);
+        drawShape(p, node, viewBox, scaleX, scaleY, options);
       }
 
       // Process children recursively
       if (node.children && node.children.length > 0) {
         node.children.forEach((child) =>
-          drawNode(p, child, viewBox, scaleX, scaleY)
+          drawNode(p, child, viewBox, scaleX, scaleY, options)
         );
       }
     }
 
-    function drawShape(p, node, viewBox, scaleX, scaleY) {
+    function drawShape(p, node, viewBox, scaleX, scaleY, options) {
       const props = node.properties || {};
       const children = node.children || {};
 
-      // Set styles
-      applyStyles(p, props);
+      if (!options.ignoreStyles) {
+        applyStyles(p, props);
+      }
 
       switch (node.tagName) {
         case "path":
@@ -1123,26 +1127,22 @@ import { parse } from "svg-parser";
       p.textStyle(p.NORMAL);
       p.drawingContext.globalAlpha = 1;
 
-      // Set fill
       if (props.fill === "none") {
         p.noFill();
       } else if (props.fill) {
         p.fill(props.fill);
       }
 
-      // Set stroke
       if (props.stroke === "none") {
         p.noStroke();
       } else if (props.stroke) {
         p.stroke(props.stroke);
       }
 
-      // Set stroke width
       if (props["stroke-width"]) {
         p.strokeWeight(parseFloat(props["stroke-width"]));
       }
 
-      // Text-specific properties
       if (props["font-size"]) {
         p.textSize(parseFloat(props["font-size"]));
       }
@@ -1152,7 +1152,6 @@ import { parse } from "svg-parser";
       }
 
       if (props["text-anchor"]) {
-        // Handle text alignment
         switch (props["text-anchor"]) {
           case "middle":
             p.textAlign(p.CENTER);
@@ -1160,7 +1159,7 @@ import { parse } from "svg-parser";
           case "end":
             p.textAlign(p.RIGHT);
             break;
-          default: // "start"
+          default:
             p.textAlign(p.LEFT);
             break;
         }
