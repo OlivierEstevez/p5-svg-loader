@@ -16,15 +16,19 @@ import { parse } from "svg-parser";
   const p5SvgLoaderAddon = function (p5, fn, lifecycles) {
     p5.prototype.SVG = class {
       constructor(svgString) {
-        this.raw = svgString.toString();
-        this.parsed = parse(svgString);
-        this.svg = this.parsed.children[0];
-        this.width = parseFloat(this.svg.properties.width) || 100;
-        this.height = parseFloat(this.svg.properties.height) || 100;
-        this.viewBox = this._parseViewBox(this.svg.properties.viewBox);
+        // this.raw = svgString.toString();
+        const parsed = parse(svgString);
+        const svg = parsed.children[0];
 
-        this.points = [];
-        this.children = [];
+        this.width = parseFloat(svg.properties.width) || 100;
+        this.height = parseFloat(svg.properties.height) || 100;
+        this.viewBox = this._parseViewBox(svg.properties.viewBox);
+
+        //this.points = [];
+        this.children = parsed.children[0].children;
+
+        // Add reference to parent SVG in each child recursively
+        this._addParentReference(this.children, this);
       }
 
       _parseViewBox(viewBox) {
@@ -40,12 +44,17 @@ import { parse } from "svg-parser";
         };
       }
 
-      getChild(name) {
+      points(name) {
         /* ... */
       }
 
-      points(name) {
-        /* ... */
+      _addParentReference(children, parentSVG) {
+        children.forEach((child) => {
+          child._parentSVG = parentSVG;
+          if (child.children && child.children.length > 0) {
+            this._addParentReference(child.children, parentSVG);
+          }
+        });
       }
     };
 
@@ -74,13 +83,14 @@ import { parse } from "svg-parser";
         ignoreStyles: false,
       }
     ) {
-      const scaleX = width / svgData.viewBox.width;
-      const scaleY = height / svgData.viewBox.height;
+      const effectiveViewBox = svgData.viewBox || svgData._parentSVG.viewBox;
+      const scaleX = width / effectiveViewBox.width;
+      const scaleY = height / effectiveViewBox.height;
 
       this.push();
       this.translate(x, y);
 
-      drawNode(this, svgData.svg, svgData.viewBox, scaleX, scaleY, options);
+      drawNode(this, svgData, effectiveViewBox, scaleX, scaleY, options);
 
       this.pop();
     };
@@ -97,19 +107,20 @@ import { parse } from "svg-parser";
       };
     }
 
-    function drawNode(p, node, viewBox, scaleX, scaleY, options) {
-      if (!node || !node.children) return;
+    function drawNode(p, svgData, viewBox, scaleX, scaleY, options) {
+      if (!svgData) return;
 
-      // Process this node if it's a shape
-      if (node.tagName && node.tagName !== "svg") {
-        drawShape(p, node, viewBox, scaleX, scaleY, options);
+      if (svgData.tagName && svgData.tagName !== "svg") {
+        drawShape(p, svgData, viewBox, scaleX, scaleY, options);
       }
 
-      // Process children recursively
-      if (node.children && node.children.length > 0) {
-        node.children.forEach((child) =>
-          drawNode(p, child, viewBox, scaleX, scaleY, options)
-        );
+      if (svgData.children && svgData.children.length > 0) {
+        svgData.children.forEach((child) => {
+          drawShape(p, child, viewBox, scaleX, scaleY, options);
+          if (child.children && child.children.length > 0) {
+            drawNode(p, child, viewBox, scaleX, scaleY, options);
+          }
+        });
       }
     }
 
