@@ -3,7 +3,7 @@
  */
 
 import { transformCoord, parsePoints } from "../core/utils.js";
-import { parsePath } from "./path.js";
+import { parsePath, ellipticalArcToBezier } from "./path.js";
 
 export function drawDebugNode(p, svgData, viewBox, scaleX, scaleY) {
   if (!svgData) return;
@@ -562,20 +562,37 @@ export function addArcBounds(
   x2,
   y2
 ) {
-  // Simplified arc bounds - add start, end, and approximate bounds
-  addPoint(bbox, x1, y1);
-  addPoint(bbox, x2, y2);
+  // Use the same elliptical arc calculation as the drawing function
+  const bezierCurves = ellipticalArcToBezier(
+    x1,
+    y1,
+    rx,
+    ry,
+    rotation,
+    largeArc,
+    sweep,
+    x2,
+    y2
+  );
 
-  const cos_rot = Math.cos((rotation * Math.PI) / 180);
-  const sin_rot = Math.sin((rotation * Math.PI) / 180);
+  // Add all Bezier curve control points and calculate extrema for precise bounds
+  bezierCurves.forEach((bezier) => {
+    addPoint(bbox, bezier.x1, bezier.y1);
+    addPoint(bbox, bezier.x4, bezier.y4);
 
-  const max_x = Math.abs(rx * cos_rot) + Math.abs(ry * sin_rot);
-  const max_y = Math.abs(rx * sin_rot) + Math.abs(ry * cos_rot);
-
-  addPoint(bbox, x1 - max_x, y1 - max_y);
-  addPoint(bbox, x1 + max_x, y1 + max_y);
-  addPoint(bbox, x2 - max_x, y2 - max_y);
-  addPoint(bbox, x2 + max_x, y2 + max_y);
+    // Calculate extrema of the cubic Bezier curve for more accurate bounds
+    addCubicBezierBounds(
+      bbox,
+      bezier.x1,
+      bezier.y1,
+      bezier.x2,
+      bezier.y2,
+      bezier.x3,
+      bezier.y3,
+      bezier.x4,
+      bezier.y4
+    );
+  });
 }
 
 export function solveQuadratic(a, b, c) {
