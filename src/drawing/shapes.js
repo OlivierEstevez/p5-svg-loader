@@ -15,9 +15,6 @@ export function drawRect(p, props, viewBox, scaleX, scaleY) {
   const w = width * scaleX;
   const h = height * scaleY;
 
-  // Apply styles
-  applyStyles(p, props);
-
   // Draw the rectangle
   p.rect(pos.x, pos.y, w, h);
 }
@@ -31,9 +28,6 @@ export function drawCircle(p, props, viewBox, scaleX, scaleY) {
   const center = transformCoord(cx, cy, viewBox, scaleX, scaleY);
   const radiusX = r * scaleX;
   const radiusY = r * scaleY;
-
-  // Apply styles
-  applyStyles(p, props);
 
   // Draw the circle
   p.ellipse(center.x, center.y, radiusX * 2, radiusY * 2);
@@ -50,9 +44,6 @@ export function drawEllipse(p, props, viewBox, scaleX, scaleY) {
   const radiusX = rx * scaleX;
   const radiusY = ry * scaleY;
 
-  // Apply styles
-  applyStyles(p, props);
-
   // Draw the ellipse
   p.ellipse(center.x, center.y, radiusX * 2, radiusY * 2);
 }
@@ -67,9 +58,6 @@ export function drawLine(p, props, viewBox, scaleX, scaleY) {
   const start = transformCoord(x1, y1, viewBox, scaleX, scaleY);
   const end = transformCoord(x2, y2, viewBox, scaleX, scaleY);
 
-  // Apply styles
-  applyStyles(p, props);
-
   // Draw the line
   p.line(start.x, start.y, end.x, end.y);
 }
@@ -78,9 +66,6 @@ export function drawPolyline(p, props, viewBox, scaleX, scaleY) {
   if (!props.points) return;
 
   const points = parsePoints(props.points);
-
-  // Apply styles
-  applyStyles(p, props);
 
   p.beginShape();
   points.forEach((point) => {
@@ -99,9 +84,6 @@ export function drawPolyline(p, props, viewBox, scaleX, scaleY) {
 export function drawPolygon(p, props, viewBox, scaleX, scaleY) {
   if (!props.points) return;
   const points = parsePoints(props.points);
-
-  // Apply styles
-  applyStyles(p, props);
 
   p.beginShape();
   points.forEach((point) => {
@@ -126,9 +108,6 @@ export function drawText(p, props, children, viewBox, scaleX, scaleY) {
 
   // Transform coordinates
   const pos = transformCoord(x, y, viewBox, scaleX, scaleY);
-
-  // Apply styles
-  applyStyles(p, props);
 
   // Use the actual scale values to follow distortion aspect ratio
   p.push();
