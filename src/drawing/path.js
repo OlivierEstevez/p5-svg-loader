@@ -97,7 +97,8 @@ export function drawPathCommands(
   initialY = 0
 ) {
   // Parse the commands for this path segment
-  const commands = parsePath(pathString);
+  const commands = parsePath(pathString, true);
+  console.log(commands);
 
   let currentX = initialX;
   let currentY = initialY;
@@ -555,7 +556,7 @@ export function drawPathCommands(
   };
 }
 
-export function parsePath(d) {
+export function parsePath(d, convertLines = true) {
   if (!d) return [];
 
   // Tokenize the path data
@@ -659,55 +660,103 @@ export function parsePath(d) {
         break;
 
       case "H": // Horizontal Line (absolute)
-        // Convert H to L - use current Y with new X
-        args.forEach((arg) => {
-          const newX = arg;
-          commands.push({
-            type: "L", // Convert to absolute line
-            x: newX,
-            y: currentY,
+        if (convertLines) {
+          // Convert H to L - use current Y with new X
+          args.forEach((arg) => {
+            const newX = arg;
+            commands.push({
+              type: "L", // Convert to absolute line
+              x: newX,
+              y: currentY,
+            });
+            currentX = newX;
           });
-          currentX = newX;
-        });
+        } else {
+          // Keep as H command - preserve SVG properties
+          args.forEach((arg) => {
+            const newX = arg;
+            commands.push({
+              type: "H",
+              x: newX,
+            });
+            currentX = newX;
+          });
+        }
         break;
 
       case "h": // Horizontal Line (relative)
-        // Convert h to l - use 0 for Y with relative X
-        args.forEach((arg) => {
-          const relX = arg;
-          currentX += relX;
-          commands.push({
-            type: "l", // Convert to relative line
-            x: relX,
-            y: 0,
+        if (convertLines) {
+          // Convert h to l - use 0 for Y with relative X
+          args.forEach((arg) => {
+            const relX = arg;
+            currentX += relX;
+            commands.push({
+              type: "l", // Convert to relative line
+              x: relX,
+              y: 0,
+            });
           });
-        });
+        } else {
+          // Keep as h command - preserve SVG properties
+          args.forEach((arg) => {
+            const relX = arg;
+            currentX += relX;
+            commands.push({
+              type: "h",
+              x: relX,
+            });
+          });
+        }
         break;
 
       case "V": // Vertical Line (absolute)
-        // Convert V to L - use current X with new Y
-        args.forEach((arg) => {
-          const newY = arg;
-          commands.push({
-            type: "L", // Convert to absolute line
-            x: currentX,
-            y: newY,
+        if (convertLines) {
+          // Convert V to L - use current X with new Y
+          args.forEach((arg) => {
+            const newY = arg;
+            commands.push({
+              type: "L", // Convert to absolute line
+              x: currentX,
+              y: newY,
+            });
+            currentY = newY;
           });
-          currentY = newY;
-        });
+        } else {
+          // Keep as V command - preserve SVG properties
+          args.forEach((arg) => {
+            const newY = arg;
+            commands.push({
+              type: "V",
+              y: newY,
+            });
+            currentY = newY;
+          });
+        }
         break;
 
       case "v": // Vertical Line (relative)
-        // Convert v to l - use 0 for X with relative Y
-        args.forEach((arg) => {
-          const relY = arg;
-          currentY += relY;
-          commands.push({
-            type: "l", // Convert to relative line
-            x: 0,
-            y: relY,
+        if (convertLines) {
+          // Convert v to l - use 0 for X with relative Y
+          args.forEach((arg) => {
+            const relY = arg;
+            currentY += relY;
+            commands.push({
+              type: "l", // Convert to relative line
+              x: 0,
+              y: relY,
+            });
           });
-        });
+        } else {
+          // Keep as v command - preserve SVG properties
+          args.forEach((arg) => {
+            const relY = arg;
+            currentY += relY;
+            commands.push({
+              type: "v",
+              y: relY,
+            });
+          });
+        }
         break;
 
       case "C": // Cubic Bezier (absolute)

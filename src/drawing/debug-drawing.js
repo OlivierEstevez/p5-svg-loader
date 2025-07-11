@@ -91,7 +91,7 @@ export function calculatePathBoundingBox(d, viewBox, scaleX, scaleY) {
     maxX: -Infinity,
     maxY: -Infinity,
   };
-  const commands = parsePath(d);
+  const commands = parsePath(d, false);
   let currentX = 0,
     currentY = 0;
   let startX = 0,
