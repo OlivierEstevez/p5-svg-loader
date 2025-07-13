@@ -30,9 +30,15 @@
       // Instance mode sketch
       const sketchInstance = (p) => {
         p.preload = function () {
-          mySVG = p.loadSVG("./sample.svg", (e) => {
-            console.log("SVG loaded:", e);
-          });
+          mySVG = p.loadSVG(
+            "./sample.svg",
+            (e) => {
+              console.log("SVG loaded:", e);
+            },
+            {
+              convertLines: true,
+            }
+          );
         };
 
         p.setup = function () {

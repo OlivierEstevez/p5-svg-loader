@@ -3,8 +3,8 @@
  */
 
 import { SVG } from "./core/SVG.js";
-import { drawNode } from "./drawing/draw-orchestrator.js";
-import { drawDebugNode } from "./drawing/debug-drawing.js";
+import { drawParsedSVG } from "./drawing/draw-main.js";
+import { drawDebugNode } from "./drawing/drawing-debug.js";
 
 // Shared utility functions to avoid duplication
 function createDrawSVG() {
@@ -12,35 +12,40 @@ function createDrawSVG() {
     svgData,
     x,
     y,
-    width = svgData.width,
-    height = svgData.height,
+    width = svgData.width || svgData.bounds.width,
+    height = svgData.height || svgData.bounds.height,
     options = {
       ignoreStyles: false,
     }
   ) {
-    const effectiveViewBox = svgData.viewBox || svgData._parentSVG.viewBox;
+    const effectiveViewBox = svgData.viewBox;
     const scaleX = width / effectiveViewBox.width;
     const scaleY = height / effectiveViewBox.height;
 
     this.push();
     this.translate(x, y);
 
-    drawNode(this, svgData, effectiveViewBox, scaleX, scaleY, options);
+    drawParsedSVG(this, svgData, effectiveViewBox, scaleX, scaleY, options);
 
     this.pop();
   };
 }
 
 function createDrawSVGDebug() {
-  return function (svgData, x, y, width, height) {
-    const effectiveViewBox = svgData.viewBox || svgData._parentSVG.viewBox;
+  return function (
+    svgData,
+    x,
+    y,
+    width = svgData.width || svgData.bounds.width,
+    height = svgData.height || svgData.bounds.height
+  ) {
+    const effectiveViewBox = svgData.viewBox;
     const scaleX = width / effectiveViewBox.width;
     const scaleY = height / effectiveViewBox.height;
 
     this.push();
     this.translate(x, y);
 
-    // Draw bounding boxes for all elements
     drawDebugNode(this, svgData, effectiveViewBox, scaleX, scaleY);
 
     this.pop();
@@ -53,13 +58,24 @@ export const p5SvgLoaderAddon = function (p5, fn, lifecycles) {
   p5.prototype.SVG = SVG;
 
   // Main SVG loader function
-  fn.loadSVG = async function (filename, callback) {
+  fn.loadSVG = async function (filename, callbackOrOptions, options) {
+    let _callback;
+    let _options;
+
+    if (typeof callbackOrOptions === "function") {
+      _callback = callbackOrOptions;
+      _options = options || {};
+    } else {
+      _callback = null;
+      _options = callbackOrOptions || {};
+    }
+
     try {
       const response = await fetch(filename);
       const svgContent = await response.text();
-      const result = new this.SVG(svgContent);
-      if (callback) {
-        callback(result);
+      const result = new this.SVG(svgContent, _options);
+      if (_callback) {
+        _callback(result);
       }
       return result;
     } catch (error) {
@@ -86,7 +102,18 @@ export function createLegacyCompatibility(p5) {
   p5.prototype.SVG = SVG;
 
   // Fixed P5.js 1.x loadSVG function
-  p5.prototype.loadSVG = function (filename, callback) {
+  p5.prototype.loadSVG = function (filename, callbackOrOptions, options) {
+    let _callback;
+    let _options;
+
+    if (typeof callbackOrOptions === "function") {
+      _callback = callbackOrOptions;
+      _options = options || {};
+    } else {
+      _callback = null;
+      _options = callbackOrOptions || {};
+    }
+
     let result = {};
 
     fetch(filename)
@@ -98,11 +125,11 @@ export function createLegacyCompatibility(p5) {
       })
       .then((svgContent) => {
         try {
-          const svgObject = new this.SVG(svgContent);
+          const svgObject = new this.SVG(svgContent, _options);
           Object.assign(result, svgObject);
 
-          if (callback) {
-            callback(result);
+          if (_callback) {
+            _callback(result);
           }
         } catch (error) {
           console.error("Error parsing SVG:", error);

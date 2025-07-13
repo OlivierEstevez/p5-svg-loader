@@ -34,7 +34,9 @@
           const canvas = p.createCanvas(1200, 1200);
           canvas.parent("sketch-container");
 
-          mySVG = await p.loadSVG("./sample.svg");
+          mySVG = await p.loadSVG("./sample.svg", {
+            convertLines: false,
+          });
           console.log("SVG loaded:", mySVG);
 
           p.background(240);
@@ -69,18 +71,17 @@
             }
           }
 
-          p.fill(255, 0, 0);
-          p.strokeWeight(20);
-          p.stroke(0, 255, 0);
-          p.drawSVG(mySVG, 50, 50, mySVG.width, mySVG.height, {
+          const w = mySVG.width / 4;
+          const h = mySVG.height / 4;
+          p.drawSVG(mySVG, 50, 50, w, h, {
             ignoreStyles: false,
           });
-          p.drawSVGDebug(mySVG, 50, 50, mySVG.width, mySVG.height);
+          p.drawSVGDebug(mySVG, 50, 50, w, h);
         };
 
         p.draw = function () {
-          // p.background(240);
-          // p.drawSVG(mySVG, 0, 0, 100, 100)
+          //p.background(240);
+          //p.drawSVG(mySVG, 0, 0, mySVG.width, mySVG.height);
         };
 
         // Store reference to the instance

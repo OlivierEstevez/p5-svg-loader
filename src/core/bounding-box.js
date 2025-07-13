@@ -1,77 +1,40 @@
-/**
- * Debug drawing functions for visualizing SVG element bounds
- */
-
-import { transformCoord, parsePoints } from "../core/utils.js";
-import { parsePath, ellipticalArcToBezier } from "./path.js";
-
-export function drawDebugNode(p, svgData, viewBox, scaleX, scaleY) {
-  if (!svgData) return;
-
-  if (svgData.tagName && svgData.tagName !== "svg") {
-    drawDebugShape(p, svgData, viewBox, scaleX, scaleY);
-  }
-
-  if (svgData.children && svgData.children.length > 0) {
-    svgData.children.forEach((child) => {
-      drawDebugShape(p, child, viewBox, scaleX, scaleY);
-      if (child.children && child.children.length > 0) {
-        drawDebugNode(p, child, viewBox, scaleX, scaleY);
-      }
-    });
-  }
-}
-
-export function drawDebugShape(p, node, viewBox, scaleX, scaleY) {
-  const props = node.properties || {};
-  const bbox = calculateBoundingBox(node, viewBox, scaleX, scaleY);
-
-  if (bbox) {
-    // Draw bounding box - blue for groups, red for other elements
-    p.push();
-    p.noFill();
-    p.stroke(node.tagName === "g" ? 0 : 255, 0, node.tagName === "g" ? 255 : 0);
-    p.strokeWeight(1);
-    p.rect(bbox.x, bbox.y, bbox.width, bbox.height);
-    p.pop();
-  }
-}
+import { ellipticalArcToBezier } from "../drawing/path";
 
 export function calculateBoundingBox(node, viewBox, scaleX, scaleY) {
-  switch (node.tagName) {
-    case "g":
+  switch (node.type || node.tagName) {
+    case "group":
       return calculateGroupBoundingBox(node, viewBox, scaleX, scaleY);
     case "path":
-      return calculatePathBoundingBox(
-        node.properties.d,
+      return calculatePathBoundingBox(node.commands, viewBox, scaleX, scaleY);
+    case "rect":
+      return calculateRectBoundingBox(
+        node.commands[0],
         viewBox,
         scaleX,
         scaleY
       );
-    case "rect":
-      return calculateRectBoundingBox(node.properties, viewBox, scaleX, scaleY);
     case "circle":
       return calculateCircleBoundingBox(
-        node.properties,
+        node.commands[0],
         viewBox,
         scaleX,
         scaleY
       );
     case "ellipse":
       return calculateEllipseBoundingBox(
-        node.properties,
+        node.commands[0],
         viewBox,
         scaleX,
         scaleY
       );
     case "line":
-      return calculateLineBoundingBox(node.properties, viewBox, scaleX, scaleY);
+      return calculateLineBoundingBox(node.commands, viewBox, scaleX, scaleY);
     case "polyline":
     case "polygon":
-      return calculatePolyBoundingBox(node.properties, viewBox, scaleX, scaleY);
+      return calculatePolyBoundingBox(node.commands, viewBox, scaleX, scaleY);
     case "text":
       return calculateTextBoundingBox(
-        node.properties,
+        node.commands,
         node.children,
         viewBox,
         scaleX,
@@ -91,7 +54,7 @@ export function calculatePathBoundingBox(d, viewBox, scaleX, scaleY) {
     maxX: -Infinity,
     maxY: -Infinity,
   };
-  const commands = parsePath(d, false);
+  const commands = d;
   let currentX = 0,
     currentY = 0;
   let startX = 0,
@@ -343,30 +306,30 @@ export function calculatePathBoundingBox(d, viewBox, scaleX, scaleY) {
   return transformBoundingBox(bbox, viewBox, scaleX, scaleY);
 }
 
-export function calculateRectBoundingBox(props, viewBox, scaleX, scaleY) {
-  const x = parseFloat(props.x) || 0;
-  const y = parseFloat(props.y) || 0;
-  const width = parseFloat(props.width) || 0;
-  const height = parseFloat(props.height) || 0;
+export function calculateRectBoundingBox(commands, viewBox, scaleX, scaleY) {
+  const x = parseFloat(commands.x) || 0;
+  const y = parseFloat(commands.y) || 0;
+  const width = parseFloat(commands.width) || 0;
+  const height = parseFloat(commands.height) || 0;
 
   const bbox = { minX: x, minY: y, maxX: x + width, maxY: y + height };
   return transformBoundingBox(bbox, viewBox, scaleX, scaleY);
 }
 
-export function calculateCircleBoundingBox(props, viewBox, scaleX, scaleY) {
-  const cx = parseFloat(props.cx) || 0;
-  const cy = parseFloat(props.cy) || 0;
-  const r = parseFloat(props.r) || 0;
+export function calculateCircleBoundingBox(commands, viewBox, scaleX, scaleY) {
+  const cx = parseFloat(commands.cx) || 0;
+  const cy = parseFloat(commands.cy) || 0;
+  const r = parseFloat(commands.r) || 0;
 
   const bbox = { minX: cx - r, minY: cy - r, maxX: cx + r, maxY: cy + r };
   return transformBoundingBox(bbox, viewBox, scaleX, scaleY);
 }
 
-export function calculateEllipseBoundingBox(props, viewBox, scaleX, scaleY) {
-  const cx = parseFloat(props.cx) || 0;
-  const cy = parseFloat(props.cy) || 0;
-  const rx = parseFloat(props.rx) || 0;
-  const ry = parseFloat(props.ry) || 0;
+export function calculateEllipseBoundingBox(commands, viewBox, scaleX, scaleY) {
+  const cx = parseFloat(commands.cx) || 0;
+  const cy = parseFloat(commands.cy) || 0;
+  const rx = parseFloat(commands.rx) || 0;
+  const ry = parseFloat(commands.ry) || 0;
 
   const bbox = {
     minX: cx - rx,
@@ -377,11 +340,11 @@ export function calculateEllipseBoundingBox(props, viewBox, scaleX, scaleY) {
   return transformBoundingBox(bbox, viewBox, scaleX, scaleY);
 }
 
-export function calculateLineBoundingBox(props, viewBox, scaleX, scaleY) {
-  const x1 = parseFloat(props.x1) || 0;
-  const y1 = parseFloat(props.y1) || 0;
-  const x2 = parseFloat(props.x2) || 0;
-  const y2 = parseFloat(props.y2) || 0;
+export function calculateLineBoundingBox(commands, viewBox, scaleX, scaleY) {
+  const x1 = parseFloat(commands.x1) || 0;
+  const y1 = parseFloat(commands.y1) || 0;
+  const x2 = parseFloat(commands.x2) || 0;
+  const y2 = parseFloat(commands.y2) || 0;
 
   const bbox = {
     minX: Math.min(x1, x2),
@@ -392,10 +355,10 @@ export function calculateLineBoundingBox(props, viewBox, scaleX, scaleY) {
   return transformBoundingBox(bbox, viewBox, scaleX, scaleY);
 }
 
-export function calculatePolyBoundingBox(props, viewBox, scaleX, scaleY) {
-  if (!props.points) return null;
+export function calculatePolyBoundingBox(commands, viewBox, scaleX, scaleY) {
+  if (!commands) return null;
 
-  const points = parsePoints(props.points);
+  const points = commands;
   if (points.length === 0) return null;
 
   const bbox = {
