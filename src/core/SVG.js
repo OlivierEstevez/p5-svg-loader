@@ -26,7 +26,7 @@ export class SVG {
     this.height = parseFloat(svg.properties.height) || this.viewBox.height;
 
     const children = parsed.children[0].children;
-    this.children = this._preParse(children, options);
+    this.children = this._preParse(children, options, {});
   }
 
   _parseViewBox(viewBox) {
@@ -39,6 +39,18 @@ export class SVG {
       width: values[2] || this.width,
       height: values[3] || this.height,
     };
+  }
+
+  _mergeStyles(inheritedStyles, elementStyles) {
+    const merged = { ...inheritedStyles };
+
+    Object.keys(elementStyles).forEach((prop) => {
+      if (elementStyles[prop] !== undefined) {
+        merged[prop] = elementStyles[prop];
+      }
+    });
+
+    return merged;
   }
 
   points(name) {
@@ -54,20 +66,22 @@ export class SVG {
     });
   }
 
-  _preParse(children, options) {
+  _preParse(children, options, inheritedStyles = {}) {
     if (!children || children.length === 0) return [];
 
     this._addParentViewbox(children, this.viewBox);
 
-    return children.map((child) => this._elementToCommands(child, options));
+    return children.map((child) =>
+      this._elementToCommands(child, options, inheritedStyles)
+    );
   }
 
-  _elementToCommands(element, options) {
+  _elementToCommands(element, options, inheritedStyles = {}) {
     const props = element.properties || {};
     const children = element.children || [];
 
-    // Pre-process styles
-    const styles = preprocessStyles(props);
+    const elementStyles = preprocessStyles(props);
+    const styles = this._mergeStyles(inheritedStyles, elementStyles);
 
     // Parse element based on type
     let commands = [];
@@ -118,8 +132,7 @@ export class SVG {
         case "g":
         case "svg":
           elementType = "group";
-          // For groups, recursively parse children
-          const childCommands = this._preParse(children, options);
+          const childCommands = this._preParse(children, options, styles);
           return {
             type: elementType,
             styles: styles,
