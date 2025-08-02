@@ -503,26 +503,30 @@ export function parseTextToCommands(props, children) {
 export function preprocessStyles(props) {
   const styles = {};
 
-  // Fill
   if (props.fill === "none") {
     styles.fill = "none";
   } else if (props.fill) {
     styles.fill = props.fill;
   }
 
-  // Stroke
   if (props.stroke === "none") {
     styles.stroke = "none";
   } else if (props.stroke) {
     styles.stroke = props.stroke;
   }
 
-  // Stroke width
   if (props["stroke-width"]) {
     styles.strokeWidth = parseFloat(props["stroke-width"]);
   }
 
-  // Font properties
+  if (props["stroke-linecap"]) {
+    styles.strokeLinecap = props["stroke-linecap"];
+  }
+
+  if (props["stroke-linejoin"]) {
+    styles.strokeLinejoin = props["stroke-linejoin"];
+  }
+
   if (props["font-size"]) {
     styles.fontSize = parseFloat(props["font-size"]);
   }

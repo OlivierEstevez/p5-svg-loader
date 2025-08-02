@@ -101,34 +101,72 @@ export function drawParsedSVG(p, svg, viewBox, scaleX, scaleY, options) {
  * @param {Object} styles - Pre-processed styles object
  */
 function applyStyles(p, styles) {
-  p.noStroke();
+  // Fill
   p.noFill();
+  p.drawingContext.globalAlpha = 1;
+
+  // Stroke
+  p.noStroke();
+  p.strokeWeight(1);
+  p.strokeCap(p.ROUND);
+  p.strokeJoin(p.MITER);
+
+  // Text
   p.textSize(10);
   p.textAlign(p.LEFT);
   p.textFont("Arial");
   p.textStyle(p.NORMAL);
-  p.drawingContext.globalAlpha = 1;
 
-  // Apply fill
   if (styles.fill === "none") {
     p.noFill();
   } else if (styles.fill) {
     p.fill(styles.fill);
   }
 
-  // Apply stroke
   if (styles.stroke === "none") {
     p.noStroke();
   } else if (styles.stroke) {
     p.stroke(styles.stroke);
   }
 
-  // Apply stroke width
   if (styles.strokeWidth) {
     p.strokeWeight(styles.strokeWidth);
   }
 
-  // Apply font properties
+  if (styles.strokeLinecap) {
+    switch (styles.strokeLinecap) {
+      case "butt":
+        p.strokeCap(p.SQUARE);
+        break;
+      case "round":
+        p.strokeCap(p.ROUND);
+        break;
+      case "square":
+        p.strokeCap(p.PROJECT);
+        break;
+      default:
+        p.strokeCap(p.ROUND);
+        break;
+    }
+  }
+
+  if (styles.strokeLinejoin) {
+    switch (styles.strokeLinejoin) {
+      case "miter":
+        p.strokeJoin(p.MITER);
+        break;
+      case "round":
+        p.strokeJoin(p.ROUND);
+        break;
+      case "bevel":
+        p.strokeJoin(p.BEVEL);
+        break;
+      default:
+        p.strokeJoin(p.MITER);
+        break;
+    }
+  }
+
   if (styles.fontSize) {
     p.textSize(styles.fontSize);
   }
@@ -151,7 +189,6 @@ function applyStyles(p, styles) {
     }
   }
 
-  // Apply opacity
   if (styles.opacity !== undefined) {
     p.drawingContext.globalAlpha = styles.opacity;
   }
