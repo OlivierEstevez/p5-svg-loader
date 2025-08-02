@@ -129,6 +129,22 @@ function applyStyles(p, styles) {
     p.stroke(styles.stroke);
   }
 
+  if (styles.strokeOpacity) {
+    const colorString = p
+      .color(styles.stroke)
+      .toString("rgba")
+      .match(/[\d.]+%?/g)
+      .map((v) =>
+        v.includes("%") ? Math.round(parseFloat(v) * 2.55) : parseInt(v)
+      );
+    p.stroke(
+      colorString[0],
+      colorString[1],
+      colorString[2],
+      Math.round(styles.strokeOpacity * 255)
+    );
+  }
+
   if (styles.strokeWidth) {
     p.strokeWeight(styles.strokeWidth);
   }

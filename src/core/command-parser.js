@@ -515,6 +515,10 @@ export function preprocessStyles(props) {
     styles.stroke = props.stroke;
   }
 
+  if (props["stroke-opacity"]) {
+    styles.strokeOpacity = parseFloat(props["stroke-opacity"]);
+  }
+
   if (props["stroke-width"]) {
     styles.strokeWidth = parseFloat(props["stroke-width"]);
   }
