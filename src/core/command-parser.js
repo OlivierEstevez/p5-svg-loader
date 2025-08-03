@@ -509,17 +509,21 @@ export function preprocessStyles(props) {
     styles.fill = props.fill;
   }
 
+  if (props["fill-opacity"] !== undefined) {
+    styles.fillOpacity = parseFloat(props["fill-opacity"]);
+  }
+
   if (props.stroke === "none") {
     styles.stroke = "none";
   } else if (props.stroke) {
     styles.stroke = props.stroke;
   }
 
-  if (props["stroke-opacity"]) {
+  if (props["stroke-opacity"] !== undefined) {
     styles.strokeOpacity = parseFloat(props["stroke-opacity"]);
   }
 
-  if (props["stroke-width"]) {
+  if (props["stroke-width"] !== undefined) {
     styles.strokeWidth = parseFloat(props["stroke-width"]);
   }
 
@@ -531,7 +535,7 @@ export function preprocessStyles(props) {
     styles.strokeLinejoin = props["stroke-linejoin"];
   }
 
-  if (props["font-size"]) {
+  if (props["font-size"] !== undefined) {
     styles.fontSize = parseFloat(props["font-size"]);
   }
 

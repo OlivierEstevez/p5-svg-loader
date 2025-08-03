@@ -123,13 +123,37 @@ function applyStyles(p, styles) {
     p.fill(styles.fill);
   }
 
+  if (
+    styles.fillOpacity !== undefined &&
+    styles.fill &&
+    styles.fill !== "none"
+  ) {
+    const colorString = p
+      .color(styles.fill)
+      .toString("rgba")
+      .match(/[\d.]+%?/g)
+      .map((v) =>
+        v.includes("%") ? Math.round(parseFloat(v) * 2.55) : parseInt(v)
+      );
+    p.fill(
+      colorString[0],
+      colorString[1],
+      colorString[2],
+      Math.round(styles.fillOpacity * 255)
+    );
+  }
+
   if (styles.stroke === "none") {
     p.noStroke();
   } else if (styles.stroke) {
     p.stroke(styles.stroke);
   }
 
-  if (styles.strokeOpacity) {
+  if (
+    styles.strokeOpacity !== undefined &&
+    styles.stroke &&
+    styles.stroke !== "none"
+  ) {
     const colorString = p
       .color(styles.stroke)
       .toString("rgba")
