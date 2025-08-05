@@ -110,6 +110,8 @@ function applyStyles(p, styles) {
   p.strokeWeight(1);
   p.strokeCap(p.ROUND);
   p.strokeJoin(p.MITER);
+  p.drawingContext.setLineDash([]);
+  p.drawingContext.lineDashOffset = 0;
 
   // Text
   p.textSize(10);
@@ -204,6 +206,18 @@ function applyStyles(p, styles) {
       default:
         p.strokeJoin(p.MITER);
         break;
+    }
+  }
+
+  if (styles.strokeDasharray !== undefined) {
+    if (styles.strokeDasharray === null) {
+      p.drawingContext.setLineDash([]);
+    } else if (Array.isArray(styles.strokeDasharray)) {
+      p.drawingContext.setLineDash(styles.strokeDasharray);
+    }
+
+    if (styles.strokeDashoffset !== undefined) {
+      p.drawingContext.lineDashOffset = styles.strokeDashoffset;
     }
   }
 

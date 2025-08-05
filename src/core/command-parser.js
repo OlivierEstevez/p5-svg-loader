@@ -3,7 +3,7 @@
  * This module handles all parsing logic at load-time for better performance
  */
 
-import { parsePoints } from "./utils.js";
+import { parsePoints, parseStrokeDasharray } from "./utils.js";
 
 /**
  * Parse SVG path data into command objects
@@ -533,6 +533,17 @@ export function preprocessStyles(props) {
 
   if (props["stroke-linejoin"]) {
     styles.strokeLinejoin = props["stroke-linejoin"];
+  }
+
+  if (props["stroke-dasharray"] !== undefined) {
+    styles.strokeDasharray = parseStrokeDasharray(props["stroke-dasharray"]);
+  }
+
+  if (props["stroke-dashoffset"] !== undefined) {
+    const dashOffset = parseFloat(props["stroke-dashoffset"]);
+    if (!isNaN(dashOffset)) {
+      styles.strokeDashoffset = dashOffset;
+    }
   }
 
   if (props["font-size"] !== undefined) {

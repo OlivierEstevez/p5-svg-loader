@@ -22,3 +22,16 @@ export function parsePoints(pointsStr) {
       return acc;
     }, []);
 }
+
+export function parseStrokeDasharray(dashArrayStr) {
+  if (!dashArrayStr || dashArrayStr === "none") {
+    return null;
+  }
+
+  const dashArray = dashArrayStr
+    .split(/[,\s]+/)
+    .map((val) => parseFloat(val.trim()))
+    .filter((val) => !isNaN(val));
+
+  return dashArray.length > 0 ? dashArray : null;
+}
