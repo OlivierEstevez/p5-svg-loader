@@ -21,7 +21,7 @@ export class SVG {
     const parsed = parse(svgString);
     const svg = parsed.children[0];
 
-    this.viewBox = this._parseViewBox(svg.properties.viewBox);
+    this.viewBox = this._parseViewBox(svg.properties.viewBox, svg.properties);
     this.width = parseFloat(svg.properties.width) || this.viewBox.width;
     this.height = parseFloat(svg.properties.height) || this.viewBox.height;
 
@@ -29,8 +29,14 @@ export class SVG {
     this.children = this._preParse(children, options, {});
   }
 
-  _parseViewBox(viewBox) {
-    if (!viewBox) return { x: 0, y: 0, width: this.width, height: this.height };
+  _parseViewBox(viewBox, properties) {
+    if (!viewBox)
+      return {
+        x: 0,
+        y: 0,
+        width: parseFloat(properties.width) || 0,
+        height: parseFloat(properties.height) || 0,
+      };
 
     const values = viewBox.split(/\s+/).map(parseFloat);
     return {
