@@ -212,7 +212,7 @@ function applyTransforms(p, transforms, viewBox, scaleX, scaleY) {
  */
 function applyStyles(p, styles) {
   // Fill
-  p.noFill();
+  p.fill(0);
   p.drawingContext.globalAlpha = 1;
 
   // Stroke
