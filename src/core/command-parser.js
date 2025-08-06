@@ -3,7 +3,11 @@
  * This module handles all parsing logic at load-time for better performance
  */
 
-import { parsePoints, parseStrokeDasharray } from "./utils.js";
+import {
+  parsePoints,
+  parseStrokeDasharray,
+  preprocessTransforms,
+} from "./utils.js";
 
 /**
  * Parse SVG path data into command objects
@@ -564,6 +568,10 @@ export function preprocessStyles(props) {
     if (opacity >= 0 && opacity <= 1) {
       styles.opacity = opacity;
     }
+  }
+
+  if (props.transform) {
+    styles.transform = preprocessTransforms(props.transform);
   }
 
   return styles;

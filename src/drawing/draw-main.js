@@ -32,12 +32,22 @@ export function drawParsedElement(
 ) {
   if (!element) return;
 
-  // Apply styles if not ignored
+  if (element.styles && element.styles.transform) {
+    p.push();
+    applyTransforms(
+      p,
+      element.styles.transform,
+      viewBox,
+      scaleX,
+      scaleY,
+      element.styles.inheritedTransforms
+    );
+  }
+
   if (!options.ignoreStyles && element.styles) {
     applyStyles(p, element.styles);
   }
 
-  // Execute commands based on element type
   switch (element.type) {
     case "path":
       drawPath(p, element.commands, viewBox, scaleX, scaleY);
@@ -64,13 +74,16 @@ export function drawParsedElement(
       drawText(p, element.commands[0], viewBox, scaleX, scaleY);
       break;
     case "group":
-      // Recursively draw group children
       if (element.children && element.children.length > 0) {
         element.children.forEach((child) => {
           drawParsedElement(p, child, viewBox, scaleX, scaleY, options);
         });
       }
       break;
+  }
+
+  if (element.styles && element.styles.transform) {
+    p.pop();
   }
 }
 
@@ -93,6 +106,103 @@ export function drawParsedSVG(p, svg, viewBox, scaleX, scaleY, options) {
       drawParsedElement(p, element, viewBox, scaleX, scaleY, options);
     });
   }
+}
+
+/**
+ * Apply SVG transforms to p5.js drawing context
+ * @param {Object} p - p5.js instance
+ * @param {Array} transforms - Array of transform objects
+ * @param {Object} viewBox - SVG viewBox
+ * @param {number} scaleX - X scale factor
+ * @param {number} scaleY - Y scale factor
+ */
+function applyTransforms(p, transforms, viewBox, scaleX, scaleY) {
+  p.angleMode(p.DEGREES);
+
+  function applyAroundOrigin(transformFn) {
+    const centerX = -viewBox.x * scaleX;
+    const centerY = -viewBox.y * scaleY;
+
+    p.translate(centerX, centerY);
+    transformFn();
+    p.translate(-centerX, -centerY);
+  }
+
+  function applyAroundPoint(transformFn, cx, cy) {
+    const centerX = (-viewBox.x + cx) * scaleX;
+    const centerY = (-viewBox.y + cy) * scaleY;
+
+    p.translate(centerX, centerY);
+    transformFn();
+    p.translate(-centerX, -centerY);
+  }
+
+  transforms.forEach((transform) => {
+    switch (transform.type) {
+      case "rotate":
+        if (transform.cx !== undefined && transform.cy !== undefined) {
+          applyAroundPoint(
+            () => p.rotate(transform.angle),
+            transform.cx,
+            transform.cy
+          );
+        } else {
+          applyAroundOrigin(() => p.rotate(transform.angle));
+        }
+        break;
+
+      case "translate":
+        applyAroundOrigin(() =>
+          p.translate(transform.x * scaleX, transform.y * scaleY)
+        );
+        break;
+
+      case "translateX":
+        applyAroundOrigin(() => p.translate(transform.x * scaleX, 0));
+        break;
+
+      case "translateY":
+        applyAroundOrigin(() => p.translate(0, transform.y * scaleY));
+        break;
+
+      case "scale":
+        applyAroundOrigin(() => {
+          p.scale(transform.x, transform.y ?? transform.x);
+        });
+        break;
+
+      case "scaleX":
+        applyAroundOrigin(() => p.scale(transform.x, 1));
+        break;
+
+      case "scaleY":
+        applyAroundOrigin(() => p.scale(1, transform.y));
+        break;
+
+      case "skewX":
+        applyAroundOrigin(() => p.shearX(transform.angle));
+        break;
+
+      case "skewY":
+        applyAroundOrigin(() => p.shearY(transform.angle));
+        break;
+
+      case "matrix":
+        applyAroundOrigin(() => {
+          p.applyMatrix(
+            transform.a,
+            transform.b,
+            transform.c,
+            transform.d,
+            transform.e * scaleX,
+            transform.f * scaleY
+          );
+        });
+        break;
+    }
+  });
+
+  p.angleMode(p.RADIANS);
 }
 
 /**

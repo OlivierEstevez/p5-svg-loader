@@ -48,7 +48,8 @@ export class SVG {
   }
 
   _mergeStyles(inheritedStyles, elementStyles) {
-    const merged = { ...inheritedStyles };
+    const { transform, ...inheritedWithoutTransform } = inheritedStyles || {};
+    const merged = { ...inheritedWithoutTransform };
 
     Object.keys(elementStyles).forEach((prop) => {
       if (elementStyles[prop] !== undefined) {
