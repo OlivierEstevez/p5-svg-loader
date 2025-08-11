@@ -1,19 +1,18 @@
-<svg
-  viewBox="-40 0 150 100"
-  xmlns="http://www.w3.org/2000/svg"
-  xmlns:xlink="http://www.w3.org/1999/xlink">
-  <g
-    fill="grey"
-    transform="rotate(-10 50 100)
-               translate(-36 45.5)
-               skewX(40)
-               scale(1 0.5)">
-    <path
-      d="M 10,30 A 20,20 0,0,1 50,30 A 20,20 0,0,1 90,30 Q 90,60 50,90 Q 10,60 10,30 z" />
-  </g>
+<?xml version="1.0" standalone="no"?>
+<svg width="200" height="250" version="1.1" xmlns="http://www.w3.org/2000/svg">
 
-  <path
-      fill="none"
-      stroke="red"
-      d="M 10,30 A 20,20 0,0,1 50,30 A 20,20 0,0,1 90,30 Q 90,60 50,90 Q 10,60 10,30 z" />
+  <rect x="10" y="10" width="30" height="30" stroke="black" fill="transparent" stroke-width="5"/>
+  <rect x="60" y="10" rx="10" ry="10" width="30" height="30" stroke="black" fill="transparent" stroke-width="5"/>
+
+  <circle cx="25" cy="75" r="20" stroke="red" fill="transparent" stroke-width="5" transform="skewX(50)"/>
+  <ellipse cx="75" cy="75" rx="20" ry="5" stroke="red" fill="transparent" stroke-width="5" transform="skewX(50)" />
+
+  <line x1="10" x2="50" y1="110" y2="150" stroke="orange" stroke-width="5"/>
+  <polyline points="60 110 65 120 70 115 75 130 80 125 85 140 90 135 95 150 100 145"
+      stroke="orange" fill="transparent" stroke-width="5"/>
+
+  <polygon points="50 160 55 180 70 180 60 190 65 205 50 195 35 205 40 190 30 180 45 180"
+      stroke="green" fill="transparent" stroke-width="5"/>
+
+  <path d="M20,230 Q40,205 50,230 T90,230" fill="none" stroke="blue" stroke-width="5"/>
 </svg>

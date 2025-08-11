@@ -116,7 +116,7 @@ export function drawParsedSVG(p, svg, viewBox, scaleX, scaleY, options) {
  * @param {number} scaleX - X scale factor
  * @param {number} scaleY - Y scale factor
  */
-function applyTransforms(p, transforms, viewBox, scaleX, scaleY) {
+export function applyTransforms(p, transforms, viewBox, scaleX, scaleY) {
   p.angleMode(p.DEGREES);
 
   function applyAroundOrigin(transformFn) {

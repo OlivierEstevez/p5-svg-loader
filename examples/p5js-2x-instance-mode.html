@@ -30,6 +30,8 @@
 
       // Instance mode sketch
       const sketchInstance = (p) => {
+        let savedTest;
+
         p.setup = async function () {
           const canvas = p.createCanvas(1200, 1200);
           canvas.parent("sketch-container");
@@ -38,6 +40,8 @@
             convertLines: false,
           });
           console.log("SVG loaded:", mySVG);
+
+          //p.translate(p.width / 2, p.height / 2);
 
           p.background(240);
 
@@ -71,18 +75,24 @@
             }
           }
 
-          const w = mySVG.width / 4;
-          const h = mySVG.height / 4;
-          p.drawSVG(mySVG, 50, 50, w, h, {
+          const w = mySVG.width * 4;
+          const h = mySVG.height * 4;
+          p.drawSVG(mySVG, 0, 0, w, h, {
             ignoreStyles: false,
           });
-          p.drawSVGDebug(mySVG, 50, 50, w, h);
+          p.drawSVGDebug(mySVG, 0, 0, w, h);
+
+          savedTest = mySVG;
         };
 
-        p.draw = function () {
-          //p.background(240);
-          //p.drawSVG(mySVG, 0, 0, mySVG.width, mySVG.height);
-        };
+        /*p.draw = function () {
+          p.background(240);
+          p.text(Math.round(p.frameRate()), 10, 10);
+          savedTest.children[0].styles.transform[0].angle = p.frameCount % 45;
+          savedTest.children[0].styles.transform[1].angle = p.frameCount % 45;
+          p.drawSVG(savedTest, 0, 0, mySVG.width * 4, mySVG.height * 4);
+          p.drawSVGDebug(savedTest, 0, 0, mySVG.width * 4, mySVG.height * 4);
+        };*/
 
         // Store reference to the instance
         sketch = p;
