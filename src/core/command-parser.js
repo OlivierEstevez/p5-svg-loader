@@ -9,6 +9,42 @@ import {
   preprocessTransforms,
 } from "./utils.js";
 
+// Based on https://github.com/Yqnn/svg-path-editor/blob/master/src/lib/path-parser.ts
+const kCommandTypeRegex = /^[\t\n\f\r ]*([MLHVZCSQTAmlhvzcsqta])[\t\n\f\r ]*/;
+const kFlagRegex = /^[01]/;
+const kNumberRegex =
+  /^[+-]?(([0-9]*\.[0-9]+)|([0-9]+\.)|([0-9]+))([eE][+-]?[0-9]+)?/;
+const kCoordinateRegex = kNumberRegex;
+const kCommaWsp = /^(([\t\n\f\r ]+,?[\t\n\f\r ]*)|(,[\t\n\f\r ]*))/;
+
+const kGrammar = {
+  M: [kCoordinateRegex, kCoordinateRegex],
+  L: [kCoordinateRegex, kCoordinateRegex],
+  H: [kCoordinateRegex],
+  V: [kCoordinateRegex],
+  Z: [],
+  C: [
+    kCoordinateRegex,
+    kCoordinateRegex,
+    kCoordinateRegex,
+    kCoordinateRegex,
+    kCoordinateRegex,
+    kCoordinateRegex,
+  ],
+  S: [kCoordinateRegex, kCoordinateRegex, kCoordinateRegex, kCoordinateRegex],
+  Q: [kCoordinateRegex, kCoordinateRegex, kCoordinateRegex, kCoordinateRegex],
+  T: [kCoordinateRegex, kCoordinateRegex],
+  A: [
+    kNumberRegex,
+    kNumberRegex,
+    kCoordinateRegex,
+    kFlagRegex,
+    kFlagRegex,
+    kCoordinateRegex,
+    kCoordinateRegex,
+  ],
+};
+
 /**
  * Parse SVG path data into command objects
  * @param {string} d - SVG path data string
@@ -18,25 +54,35 @@ import {
 export function parsePath(d, convertLines = true) {
   if (!d) return [];
 
-  // Tokenize the path data
-  const tokens = d.match(/[a-z][^a-z]*/gi) || [];
-  const commands = [];
+  let cursor = 0;
+  let tokens = [];
 
-  // Keep track of current position to convert H and V commands
+  // Parse the path into tokens first using the proper tokenizer
+  while (cursor < d.length) {
+    const match = d.slice(cursor).match(kCommandTypeRegex);
+    if (match !== null) {
+      const command = match[1];
+      if (cursor === 0 && command.toLowerCase() !== "m") {
+        throw new Error("malformed path (first error at " + cursor + ")");
+      }
+      cursor += match[0].length;
+      const componentList = parseComponents(command, d, cursor);
+      cursor = componentList[0];
+      tokens = [...tokens, ...componentList[1]];
+    } else {
+      throw new Error("malformed path (first error at " + cursor + ")");
+    }
+  }
+
+  // Convert tokens to command objects
+  const commands = [];
   let currentX = 0;
   let currentY = 0;
 
   tokens.forEach((token) => {
     const type = token[0];
-    const args = [];
-    const numberRegex = /[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?/g;
-    let match;
-    const argString = token.slice(1).replace(/,/g, " ");
-    while ((match = numberRegex.exec(argString)) !== null) {
-      args.push(parseFloat(match[0]));
-    }
+    const args = token.slice(1).map((arg) => parseFloat(arg));
 
-    // Fix 3: Add validation
     const expectedCounts = {
       M: 2,
       m: 2,
@@ -62,7 +108,9 @@ export function parsePath(d, convertLines = true) {
 
     if (expectedCounts[type] && args.length % expectedCounts[type] !== 0) {
       console.warn(
-        `Invalid ${type} command: expected multiple of ${expectedCounts[type]}, got ${args.length}: ${token} ${args}`
+        `Invalid ${type} command: expected multiple of ${
+          expectedCounts[type]
+        }, got ${args.length}: ${token.join(" ")}`
       );
     }
 
@@ -78,7 +126,6 @@ export function parsePath(d, convertLines = true) {
               y: currentY,
             });
           } else {
-            // Subsequent coordinate pairs are treated as implicit Line commands
             currentX = args[i];
             currentY = args[i + 1];
             commands.push({
@@ -101,7 +148,6 @@ export function parsePath(d, convertLines = true) {
               y: args[i + 1],
             });
           } else {
-            // Subsequent coordinate pairs are treated as implicit Line commands
             const relX = args[i];
             const relY = args[i + 1];
             currentX += relX;
@@ -143,18 +189,16 @@ export function parsePath(d, convertLines = true) {
 
       case "H": // Horizontal Line (absolute)
         if (convertLines) {
-          // Convert H to L - use current Y with new X
           args.forEach((arg) => {
             const newX = arg;
             commands.push({
-              type: "L", // Convert to absolute line
+              type: "L",
               x: newX,
               y: currentY,
             });
             currentX = newX;
           });
         } else {
-          // Keep as H command - preserve SVG properties
           args.forEach((arg) => {
             const newX = arg;
             commands.push({
@@ -168,18 +212,16 @@ export function parsePath(d, convertLines = true) {
 
       case "h": // Horizontal Line (relative)
         if (convertLines) {
-          // Convert h to l - use 0 for Y with relative X
           args.forEach((arg) => {
             const relX = arg;
             currentX += relX;
             commands.push({
-              type: "l", // Convert to relative line
+              type: "l",
               x: relX,
               y: 0,
             });
           });
         } else {
-          // Keep as h command - preserve SVG properties
           args.forEach((arg) => {
             const relX = arg;
             currentX += relX;
@@ -193,18 +235,16 @@ export function parsePath(d, convertLines = true) {
 
       case "V": // Vertical Line (absolute)
         if (convertLines) {
-          // Convert V to L - use current X with new Y
           args.forEach((arg) => {
             const newY = arg;
             commands.push({
-              type: "L", // Convert to absolute line
+              type: "L",
               x: currentX,
               y: newY,
             });
             currentY = newY;
           });
         } else {
-          // Keep as V command - preserve SVG properties
           args.forEach((arg) => {
             const newY = arg;
             commands.push({
@@ -218,18 +258,16 @@ export function parsePath(d, convertLines = true) {
 
       case "v": // Vertical Line (relative)
         if (convertLines) {
-          // Convert v to l - use 0 for X with relative Y
           args.forEach((arg) => {
             const relY = arg;
             currentY += relY;
             commands.push({
-              type: "l", // Convert to relative line
+              type: "l",
               x: 0,
               y: relY,
             });
           });
         } else {
-          // Keep as v command - preserve SVG properties
           args.forEach((arg) => {
             const relY = arg;
             currentY += relY;
@@ -405,6 +443,49 @@ export function parsePath(d, convertLines = true) {
   });
 
   return commands;
+}
+
+/**
+ * Parse components for a given command type
+ * @param {string} type - Command type
+ * @param {string} path - Path string
+ * @param {number} cursor - Current cursor position
+ * @returns {Array} Array of components
+ */
+function parseComponents(type, path, cursor) {
+  const expectedRegexList = kGrammar[type.toUpperCase()];
+  const components = [];
+
+  while (cursor <= path.length) {
+    const component = [type];
+    for (const regex of expectedRegexList) {
+      const match = path.slice(cursor).match(regex);
+
+      if (match !== null) {
+        component.push(match[0]);
+        cursor += match[0].length;
+        const ws = path.slice(cursor).match(kCommaWsp);
+        if (ws !== null) {
+          cursor += ws[0].length;
+        }
+      } else if (component.length === 1 && components.length >= 1) {
+        return [cursor, components];
+      } else {
+        throw new Error("malformed path (first error at " + cursor + ")");
+      }
+    }
+    components.push(component);
+    if (expectedRegexList.length === 0) {
+      return [cursor, components];
+    }
+    if (type === "m") {
+      type = "l";
+    }
+    if (type === "M") {
+      type = "L";
+    }
+  }
+  throw new Error("malformed path (first error at " + cursor + ")");
 }
 
 /**
