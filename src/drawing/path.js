@@ -3,6 +3,7 @@
  */
 
 import { transformCoord } from "../core/utils.js";
+import { applyTransformsToPath } from "../core/transform-utils.js";
 
 // Elliptical arc calculation functions
 export function ellipticalArcToBezier(
@@ -123,4 +124,247 @@ export function drawBezierCurve(p, bezier, viewBox, scaleX, scaleY) {
   } else {
     p.bezierVertex(p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
   }
+}
+
+/**
+ * Convert a rectangle to path data
+ * @param {Object} rect - Rectangle object with x, y, width, height
+ * @returns {Array} Array of path commands
+ */
+function rectToPathCommands(rect) {
+  const { x, y, width, height } = rect;
+  return [
+    { type: "M", x, y },
+    { type: "L", x: x + width, y },
+    { type: "L", x: x + width, y: y + height },
+    { type: "L", x, y: y + height },
+    { type: "Z" },
+  ];
+}
+
+/**
+ * Convert a circle to path data
+ * @param {Object} circle - Circle object with cx, cy, r
+ * @returns {Array} Array of path commands
+ */
+function circleToPathCommands(circle) {
+  const { cx, cy, r } = circle;
+  // Approximate circle with 4 cubic bezier curves
+  const k = 0.5522848; // Magic number for circle approximation
+  const kr = k * r;
+
+  return [
+    { type: "M", x: cx + r, y: cy },
+    {
+      type: "C",
+      x1: cx + r,
+      y1: cy - kr,
+      x2: cx + kr,
+      y2: cy - r,
+      x: cx,
+      y: cy - r,
+    },
+    {
+      type: "C",
+      x1: cx - kr,
+      y1: cy - r,
+      x2: cx - r,
+      y2: cy - kr,
+      x: cx - r,
+      y: cy,
+    },
+    {
+      type: "C",
+      x1: cx - r,
+      y1: cy + kr,
+      x2: cx - kr,
+      y2: cy + r,
+      x: cx,
+      y: cy + r,
+    },
+    {
+      type: "C",
+      x1: cx + kr,
+      y1: cy + r,
+      x2: cx + r,
+      y2: cy + kr,
+      x: cx + r,
+      y: cy,
+    },
+    { type: "Z" },
+  ];
+}
+
+/**
+ * Convert an ellipse to path data
+ * @param {Object} ellipse - Ellipse object with cx, cy, rx, ry
+ * @returns {Array} Array of path commands
+ */
+function ellipseToPathCommands(ellipse) {
+  const { cx, cy, rx, ry } = ellipse;
+  // Approximate ellipse with 4 cubic bezier curves
+  const k = 0.5522848; // Magic number for circle approximation
+  const kx = k * rx;
+  const ky = k * ry;
+
+  return [
+    { type: "M", x: cx + rx, y: cy },
+    {
+      type: "C",
+      x1: cx + rx,
+      y1: cy - ky,
+      x2: cx + kx,
+      y2: cy - ry,
+      x: cx,
+      y: cy - ry,
+    },
+    {
+      type: "C",
+      x1: cx - kx,
+      y1: cy - ry,
+      x2: cx - rx,
+      y2: cy - ky,
+      x: cx - rx,
+      y: cy,
+    },
+    {
+      type: "C",
+      x1: cx - rx,
+      y1: cy + ky,
+      x2: cx - kx,
+      y2: cy + ry,
+      x: cx,
+      y: cy + ry,
+    },
+    {
+      type: "C",
+      x1: cx + kx,
+      y1: cy + ry,
+      x2: cx + rx,
+      y2: cy + ky,
+      x: cx + rx,
+      y: cy,
+    },
+    { type: "Z" },
+  ];
+}
+
+/**
+ * Convert a line to path data
+ * @param {Object} line - Line object with x1, y1, x2, y2
+ * @returns {Array} Array of path commands
+ */
+function lineToPathCommands(line) {
+  const { x1, y1, x2, y2 } = line;
+  return [
+    { type: "M", x: x1, y: y1 },
+    { type: "L", x: x2, y: y2 },
+  ];
+}
+
+/**
+ * Convert polyline/polygon points to path data
+ * @param {Array} points - Array of point objects with x, y
+ * @param {boolean} closePath - Whether to close the path
+ * @returns {Array} Array of path commands
+ */
+function polyToPathCommands(points, closePath = false) {
+  if (!points || points.length === 0) return [];
+
+  const commands = [];
+
+  // Start with first point
+  if (points.length > 0) {
+    commands.push({ type: "M", x: points[0].x, y: points[0].y });
+  }
+
+  // Add line commands for subsequent points
+  for (let i = 1; i < points.length; i++) {
+    commands.push({ type: "L", x: points[i].x, y: points[i].y });
+  }
+
+  // Close path if requested
+  if (closePath && points.length > 2) {
+    commands.push({ type: "Z" });
+  }
+
+  return commands;
+}
+
+/**
+ * Flatten transforms by applying them to SVG shapes and converting to path data
+ * @param {Object} element - SVG element object with type, commands, and styles
+ * @returns {Array} Flattened path commands with transforms applied
+ */
+export function flattenTransforms(element) {
+  if (!element) return [];
+
+  let pathCommands = [];
+
+  switch (element.type) {
+    case "path":
+      pathCommands = element.commands || [];
+      break;
+
+    case "rect":
+      pathCommands = rectToPathCommands(element.commands[0]);
+      break;
+
+    case "circle":
+      pathCommands = circleToPathCommands(element.commands[0]);
+      break;
+
+    case "ellipse":
+      pathCommands = ellipseToPathCommands(element.commands[0]);
+      break;
+
+    case "line":
+      pathCommands = lineToPathCommands(element.commands[0]);
+      break;
+
+    case "polyline":
+      pathCommands = polyToPathCommands(element.commands, false);
+      break;
+
+    case "polygon":
+      pathCommands = polyToPathCommands(element.commands, true);
+      break;
+
+    case "text":
+      // Text is complex to convert to path - for now, return empty array
+      console.warn(
+        "Text elements cannot be converted to paths in flattenTransforms"
+      );
+      return [];
+
+    case "group":
+      // For groups, recursively flatten all children and combine
+      if (element.children && element.children.length > 0) {
+        const childPaths = element.children.map((child) =>
+          flattenTransforms(child)
+        );
+        return childPaths.flat();
+      }
+      return [];
+
+    default:
+      console.warn(`Unknown element type: ${element.type}`);
+      return [];
+  }
+
+  if (element.styles && element.styles.transform && pathCommands.length > 0) {
+    pathCommands = applyTransformsToPath(
+      pathCommands,
+      element.styles.transform
+    );
+  }
+
+  return {
+    commands: pathCommands,
+    styles: (() => {
+      if (!element.styles) return {};
+      const { transform, ...rest } = element.styles;
+      return rest;
+    })(),
+  };
 }

@@ -4,7 +4,6 @@
  */
 
 import { parse } from "svg-parser";
-import { calculateBoundingBox } from "./bounding-box.js";
 import {
   parsePath,
   parsePointsToCommands,
@@ -15,9 +14,13 @@ import {
   parseTextToCommands,
   preprocessStyles,
 } from "./command-parser.js";
+import { flattenTransforms } from "../drawing/path.js";
 
 export class SVG {
-  constructor(svgString, options) {
+  constructor(svgString, options = {}) {
+    this.options = options;
+    this._validateOptions(options);
+
     const parsed = parse(svgString);
     const svg = parsed.children[0];
 
@@ -26,7 +29,7 @@ export class SVG {
     this.height = parseFloat(svg.properties.height) || this.viewBox.height;
 
     const children = parsed.children[0].children;
-    this.children = this._preParse(children, options, {});
+    this.children = this._preParse(children, {});
   }
 
   _parseViewBox(viewBox, properties) {
@@ -60,10 +63,6 @@ export class SVG {
     return merged;
   }
 
-  points(name) {
-    /* ... */
-  }
-
   _addParentViewbox(children, viewBox) {
     children.forEach((child) => {
       child.viewBox = viewBox;
@@ -73,17 +72,115 @@ export class SVG {
     });
   }
 
-  _preParse(children, options, inheritedStyles = {}) {
+  _preParse(children, inheritedStyles = {}) {
     if (!children || children.length === 0) return [];
 
     this._addParentViewbox(children, this.viewBox);
 
-    return children.map((child) =>
-      this._elementToCommands(child, options, inheritedStyles)
+    this._checkForTransforms(children, inheritedStyles);
+
+    const parsedChildren = children.map((child) =>
+      this._elementToCommands(child, inheritedStyles)
     );
+
+    if (this.options.flattenTransforms || this.options.flattenShapes) {
+      return this._flattenShapesOrTransforms(parsedChildren);
+    }
+
+    return parsedChildren;
   }
 
-  _elementToCommands(element, options, inheritedStyles = {}) {
+  /**
+   * Check if any element has transform operations and warn if none found
+   * @param {Array} elements - Array of SVG elements to check
+   * @param {Object} inheritedStyles - Inherited styles from parent elements
+   * @returns {boolean} True if any element has transforms, false otherwise
+   */
+  _checkForTransforms(elements, inheritedStyles = {}) {
+    let hasTransforms = false;
+
+    const checkElement = (element) => {
+      if (!element) return;
+
+      const props = element.properties || {};
+      const elementStyles = preprocessStyles(props);
+      const styles = this._mergeStyles(inheritedStyles, elementStyles);
+
+      if (styles.transform && styles.transform.length > 0) {
+        hasTransforms = true;
+      }
+
+      if (element.children && element.children.length > 0) {
+        const childHasTransforms = this._checkForTransforms(
+          element.children,
+          styles
+        );
+        hasTransforms = hasTransforms || childHasTransforms;
+      }
+    };
+
+    elements.forEach(checkElement);
+
+    if (!hasTransforms) {
+      console.warn(
+        "flattenTransforms is active but no SVG elements with transform operations found"
+      );
+    }
+
+    return hasTransforms;
+  }
+
+  /**
+   * Flattens only shapes with transforms or all shapes (if flattenShapes is true).
+   * Groups are preserved and processed recursively. Elements without transforms are kept unchanged unless flattenShapes is true.
+   * @param {Array} elements - Array of parsed SVG elements
+   * @returns {Array} Array of processed elements (flattened where needed, groups preserved)
+   */
+  _flattenShapesOrTransforms(elements) {
+    const processedElements = [];
+
+    const processElement = (element) => {
+      if (!element) return;
+
+      if (element.type === "group" && element.children) {
+        const processedChildren = this._flattenShapesOrTransforms(
+          element.children
+        );
+        if (processedChildren.length > 0) {
+          processedElements.push({
+            ...element,
+            children: processedChildren,
+          });
+        }
+      } else {
+        if (
+          (element.styles &&
+            element.styles.transform &&
+            element.styles.transform.length > 0) ||
+          this.options.flattenShapes
+        ) {
+          const flattened = flattenTransforms(element);
+          if (flattened.commands && flattened.commands.length > 0) {
+            processedElements.push({
+              type: "path",
+              commands: flattened.commands,
+              styles: flattened.styles || element.styles || {},
+              originalType: element.type,
+              //bounds: element.bounds,
+              viewBox: element.viewBox,
+            });
+          }
+        } else {
+          processedElements.push(element);
+        }
+      }
+    };
+
+    elements.forEach(processElement);
+    return processedElements;
+  }
+
+  _elementToCommands(element, inheritedStyles = {}) {
     const props = element.properties || {};
     const children = element.children || [];
 
@@ -98,7 +195,7 @@ export class SVG {
       switch (element.tagName) {
         case "path":
           elementType = "path";
-          commands = parsePath(props.d, options.convertLines);
+          commands = parsePath(props.d, this.options.convertLines);
           break;
 
         case "rect":
@@ -139,27 +236,15 @@ export class SVG {
         case "g":
         case "svg":
           elementType = "group";
-          const childCommands = this._preParse(children, options, styles);
+          const childCommands = this._preParse(children, styles);
           return {
             type: elementType,
             styles: styles,
             children: childCommands,
             viewBox: element.viewBox,
-            bounds: calculateBoundingBox(
-              {
-                type: elementType,
-                commands: commands,
-                viewBox: element.viewBox,
-                children: childCommands,
-              },
-              element.viewBox,
-              1,
-              1
-            ),
           };
 
         default:
-          // Unknown element type - skip or handle as needed
           console.warn(`Unknown SVG element type: ${element.tagName}`);
           return null;
       }
@@ -168,24 +253,29 @@ export class SVG {
       return null;
     }
 
-    // Calculate bounding box for the commands
-    const bounds = calculateBoundingBox(
-      {
-        type: elementType,
-        commands: commands,
-        viewBox: element.viewBox,
-      },
-      element.viewBox,
-      1,
-      1
-    );
-
     return {
       type: elementType,
       commands: commands,
       styles: styles,
-      bounds: bounds,
       viewBox: element.viewBox,
     };
+  }
+
+  _validateOptions() {
+    if (
+      this.options.flattenShapes &&
+      (this.options.flattenTransforms || this.options.convertLines)
+    ) {
+      const redundant = [];
+      if (this.options.flattenTransforms) redundant.push("flattenTransforms");
+      if (this.options.convertLines) redundant.push("convertLines");
+
+      console.warn(
+        `SVG Loader: ${redundant.join(" and ")} ${
+          redundant.length > 1 ? "are" : "is"
+        } redundant when flattenShapes is true. ` +
+          `flattenShapes already includes this functionality.`
+      );
+    }
   }
 }

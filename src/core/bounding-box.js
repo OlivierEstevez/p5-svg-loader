@@ -1,4 +1,8 @@
-import { ellipticalArcToBezier } from "../drawing/path";
+import { ellipticalArcToBezier, flattenTransforms } from "../drawing/path";
+import {
+  buildTransformationMatrix,
+  applyMatrixToPoint,
+} from "./transform-utils.js";
 
 export function calculateBoundingBox(node, viewBox, scaleX, scaleY) {
   switch (node.type || node.tagName) {
@@ -6,7 +10,7 @@ export function calculateBoundingBox(node, viewBox, scaleX, scaleY) {
       return calculateGroupBoundingBox(node, viewBox, scaleX, scaleY);
     case "path":
       return calculatePathBoundingBox(
-        node.commands,
+        node,
         viewBox,
         scaleX,
         scaleY,
@@ -67,22 +71,19 @@ export function calculateBoundingBox(node, viewBox, scaleX, scaleY) {
 }
 
 export function calculatePathBoundingBox(
-  d,
+  node,
   viewBox,
   scaleX,
   scaleY,
   transforms
 ) {
+  let d = node.commands;
   if (!d) return null;
 
+  let useFlattenedTransforms = false;
   if (transforms && transforms.length > 0) {
-    return calculateTransformedPathBoundingBox(
-      d,
-      transforms,
-      viewBox,
-      scaleX,
-      scaleY
-    );
+    d = flattenTransforms(node).commands;
+    useFlattenedTransforms = true;
   }
 
   const bbox = {
@@ -530,36 +531,64 @@ export function calculateTextBoundingBox(
   return transformBoundingBox(bbox, viewBox, scaleX, scaleY);
 }
 
-export function calculateGroupBoundingBox(node, viewBox, scaleX, scaleY) {
+export function calculateGroupBoundingBox(
+  node,
+  viewBox,
+  scaleX,
+  scaleY,
+  inheritedTransforms = []
+) {
   if (!node.children || node.children.length === 0) return null;
 
-  const groupBbox = {
+  const bbox = {
     minX: Infinity,
     minY: Infinity,
     maxX: -Infinity,
     maxY: -Infinity,
   };
 
-  // Calculate bounding box by combining all child element bounds
-  for (const child of node.children) {
-    const childBbox = calculateBoundingBox(child, viewBox, scaleX, scaleY);
-    if (childBbox) {
-      // Convert back to viewBox coordinates for proper combination
-      const childMinX = childBbox.x / scaleX + viewBox.x;
-      const childMinY = childBbox.y / scaleY + viewBox.y;
-      const childMaxX = childMinX + childBbox.width / scaleX;
-      const childMaxY = childMinY + childBbox.height / scaleY;
+  const groupTransforms = [
+    ...inheritedTransforms,
+    ...(node.styles?.transform || []),
+  ];
 
-      groupBbox.minX = Math.min(groupBbox.minX, childMinX);
-      groupBbox.minY = Math.min(groupBbox.minY, childMinY);
-      groupBbox.maxX = Math.max(groupBbox.maxX, childMaxX);
-      groupBbox.maxY = Math.max(groupBbox.maxY, childMaxY);
+  for (const child of node.children) {
+    const childTransforms = [
+      ...groupTransforms,
+      ...(child.styles?.transform || []),
+    ];
+
+    const childBbox = calculateBoundingBox(
+      {
+        ...child,
+        styles: {
+          ...child.styles,
+          transform: childTransforms,
+        },
+      },
+      viewBox,
+      scaleX,
+      scaleY
+    );
+
+    if (childBbox) {
+      addPoint(bbox, childBbox.x, childBbox.y);
+      addPoint(
+        bbox,
+        childBbox.x + childBbox.width,
+        childBbox.y + childBbox.height
+      );
     }
   }
 
-  if (groupBbox.minX === Infinity) return null;
+  if (bbox.minX === Infinity) return null;
 
-  return transformBoundingBox(groupBbox, viewBox, scaleX, scaleY);
+  return {
+    x: bbox.minX,
+    y: bbox.minY,
+    width: bbox.maxX - bbox.minX,
+    height: bbox.maxY - bbox.minY,
+  };
 }
 
 // Helper functions for precise bezier curve bounding box calculation
@@ -758,149 +787,6 @@ export function calculateTransformedBoundingBox(
   };
 
   return transformBoundingBox(bbox, viewBox, scaleX, scaleY);
-}
-
-/**
- * Build transformation matrix from a list of transforms
- */
-function buildTransformationMatrix(transforms) {
-  if (!transforms || transforms.length === 0) {
-    return { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
-  }
-
-  let matrix = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
-
-  function multiplyMatrix(m1, m2) {
-    return {
-      a: m1.a * m2.a + m1.c * m2.b,
-      b: m1.b * m2.a + m1.d * m2.b,
-      c: m1.a * m2.c + m1.c * m2.d,
-      d: m1.b * m2.c + m1.d * m2.d,
-      e: m1.a * m2.e + m1.c * m2.f + m1.e,
-      f: m1.b * m2.e + m1.d * m2.f + m1.f,
-    };
-  }
-
-  function createTranslateMatrix(tx, ty) {
-    return { a: 1, b: 0, c: 0, d: 1, e: tx, f: ty };
-  }
-
-  function createRotateMatrix(angle) {
-    const radians = (angle * Math.PI) / 180;
-    const cos = Math.cos(radians);
-    const sin = Math.sin(radians);
-    return { a: cos, b: sin, c: -sin, d: cos, e: 0, f: 0 };
-  }
-
-  function createRotateAroundPointMatrix(angle, cx, cy) {
-    const radians = (angle * Math.PI) / 180;
-    const cos = Math.cos(radians);
-    const sin = Math.sin(radians);
-    return {
-      a: cos,
-      b: sin,
-      c: -sin,
-      d: cos,
-      e: cx - cx * cos + cy * sin,
-      f: cy - cx * sin - cy * cos,
-    };
-  }
-
-  function createScaleMatrix(sx, sy) {
-    return { a: sx, b: 0, c: 0, d: sy, e: 0, f: 0 };
-  }
-
-  function createSkewXMatrix(angle) {
-    const radians = (angle * Math.PI) / 180;
-    const tan = Math.tan(radians);
-    return { a: 1, b: 0, c: tan, d: 1, e: 0, f: 0 };
-  }
-
-  function createSkewYMatrix(angle) {
-    const radians = (angle * Math.PI) / 180;
-    const tan = Math.tan(radians);
-    return { a: 1, b: tan, c: 0, d: 1, e: 0, f: 0 };
-  }
-
-  transforms.forEach((transform) => {
-    let transformMatrix;
-
-    switch (transform.type) {
-      case "translate":
-        transformMatrix = createTranslateMatrix(
-          transform.x || 0,
-          transform.y || 0
-        );
-        break;
-      case "translateX":
-        transformMatrix = createTranslateMatrix(
-          transform.x || transform.value || 0,
-          0
-        );
-        break;
-      case "translateY":
-        transformMatrix = createTranslateMatrix(
-          0,
-          transform.y || transform.value || 0
-        );
-        break;
-      case "rotate":
-        if (transform.cx !== undefined || transform.cy !== undefined) {
-          transformMatrix = createRotateAroundPointMatrix(
-            transform.angle || 0,
-            transform.cx || 0,
-            transform.cy || 0
-          );
-        } else {
-          transformMatrix = createRotateMatrix(transform.angle || 0);
-        }
-        break;
-      case "scale":
-        const sx = transform.x || transform.sx || 1;
-        const sy = transform.y || transform.sy || sx;
-        transformMatrix = createScaleMatrix(sx, sy);
-        break;
-      case "scaleX":
-        transformMatrix = createScaleMatrix(
-          transform.x || transform.value || 1,
-          1
-        );
-        break;
-      case "scaleY":
-        transformMatrix = createScaleMatrix(
-          1,
-          transform.y || transform.value || 1
-        );
-        break;
-      case "skewX":
-        transformMatrix = createSkewXMatrix(
-          transform.angle || transform.value || 0
-        );
-        break;
-      case "skewY":
-        transformMatrix = createSkewYMatrix(
-          transform.angle || transform.value || 0
-        );
-        break;
-      case "matrix":
-        transformMatrix = {
-          a: transform.a || 1,
-          b: transform.b || 0,
-          c: transform.c || 0,
-          d: transform.d || 1,
-          e: transform.e || 0,
-          f: transform.f || 0,
-        };
-        break;
-      default:
-        transformMatrix = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
-        break;
-    }
-
-    matrix = multiplyMatrix(matrix, transformMatrix);
-  });
-
-  return matrix;
 }
 
 /**
@@ -1131,16 +1017,13 @@ export function calculateTransformedPolyBoundingBox(
   const points = commands;
   if (points.length === 0) return null;
 
-  // Build transformation matrix
   const matrix = buildTransformationMatrix(transforms);
 
-  // Transform all points
   const transformedPoints = points.map((point) => ({
     x: matrix.a * point.x + matrix.c * point.y + matrix.e,
     y: matrix.b * point.x + matrix.d * point.y + matrix.f,
   }));
 
-  // Calculate bounding box from transformed points
   const bbox = {
     minX: Infinity,
     minY: Infinity,
@@ -1151,300 +1034,6 @@ export function calculateTransformedPolyBoundingBox(
   transformedPoints.forEach((point) => {
     addPoint(bbox, point.x, point.y);
   });
-
-  return transformBoundingBox(bbox, viewBox, scaleX, scaleY);
-}
-
-export function calculateTransformedPathBoundingBox(
-  commands,
-  transforms,
-  viewBox,
-  scaleX,
-  scaleY
-) {
-  if (!commands || commands.length === 0) return null;
-
-  // Build transformation matrix
-  const matrix = buildTransformationMatrix(transforms);
-
-  // Check if the transformation matrix is valid
-  if (
-    !matrix ||
-    (Math.abs(matrix.a) < 1e-10 &&
-      Math.abs(matrix.b) < 1e-10 &&
-      Math.abs(matrix.c) < 1e-10 &&
-      Math.abs(matrix.d) < 1e-10)
-  ) {
-    console.warn(
-      "Invalid transformation matrix detected, falling back to untransformed calculation"
-    );
-    return calculatePathBoundingBox(commands, viewBox, scaleX, scaleY);
-  }
-
-  const bbox = {
-    minX: Infinity,
-    minY: Infinity,
-    maxX: -Infinity,
-    maxY: -Infinity,
-  };
-
-  let currentX = 0,
-    currentY = 0;
-  let startX = 0,
-    startY = 0;
-  let lastControlX = 0,
-    lastControlY = 0;
-
-  for (const cmd of commands) {
-    switch (cmd.type) {
-      case "M":
-        currentX = cmd.x;
-        currentY = cmd.y;
-        startX = currentX;
-        startY = currentY;
-        addTransformedPoint(bbox, currentX, currentY, matrix);
-        break;
-      case "m":
-        currentX += cmd.x;
-        currentY += cmd.y;
-        startX = currentX;
-        startY = currentY;
-        addTransformedPoint(bbox, currentX, currentY, matrix);
-        break;
-      case "L":
-        currentX = cmd.x;
-        currentY = cmd.y;
-        addTransformedPoint(bbox, currentX, currentY, matrix);
-        break;
-      case "l":
-        currentX += cmd.x;
-        currentY += cmd.y;
-        addTransformedPoint(bbox, currentX, currentY, matrix);
-        break;
-      case "H":
-        currentX = cmd.x;
-        addTransformedPoint(bbox, currentX, currentY, matrix);
-        break;
-      case "h":
-        currentX += cmd.x;
-        addTransformedPoint(bbox, currentX, currentY, matrix);
-        break;
-      case "V":
-        currentY = cmd.y;
-        addTransformedPoint(bbox, currentX, currentY, matrix);
-        break;
-      case "v":
-        currentY += cmd.y;
-        addTransformedPoint(bbox, currentX, currentY, matrix);
-        break;
-      case "C":
-        addTransformedCubicBezierBounds(
-          bbox,
-          currentX,
-          currentY,
-          cmd.x1,
-          cmd.y1,
-          cmd.x2,
-          cmd.y2,
-          cmd.x,
-          cmd.y,
-          matrix
-        );
-        lastControlX = cmd.x2;
-        lastControlY = cmd.y2;
-        currentX = cmd.x;
-        currentY = cmd.y;
-        break;
-      case "c":
-        const c1x = currentX + cmd.x1;
-        const c1y = currentY + cmd.y1;
-        const c2x = currentX + cmd.x2;
-        const c2y = currentY + cmd.y2;
-        const endX = currentX + cmd.x;
-        const endY = currentY + cmd.y;
-        addTransformedCubicBezierBounds(
-          bbox,
-          currentX,
-          currentY,
-          c1x,
-          c1y,
-          c2x,
-          c2y,
-          endX,
-          endY,
-          matrix
-        );
-        lastControlX = c2x;
-        lastControlY = c2y;
-        currentX = endX;
-        currentY = endY;
-        break;
-      case "S":
-        const sx1 = lastControlX ? 2 * currentX - lastControlX : currentX;
-        const sy1 = lastControlY ? 2 * currentY - lastControlY : currentY;
-        addTransformedCubicBezierBounds(
-          bbox,
-          currentX,
-          currentY,
-          sx1,
-          sy1,
-          cmd.x2,
-          cmd.y2,
-          cmd.x,
-          cmd.y,
-          matrix
-        );
-        lastControlX = cmd.x2;
-        lastControlY = cmd.y2;
-        currentX = cmd.x;
-        currentY = cmd.y;
-        break;
-      case "s":
-        const sx1Rel = lastControlX ? 2 * currentX - lastControlX : currentX;
-        const sy1Rel = lastControlY ? 2 * currentY - lastControlY : currentY;
-        const sc2x = currentX + cmd.x2;
-        const sc2y = currentY + cmd.y2;
-        const sendX = currentX + cmd.x;
-        const sendY = currentY + cmd.y;
-        addTransformedCubicBezierBounds(
-          bbox,
-          currentX,
-          currentY,
-          sx1Rel,
-          sy1Rel,
-          sc2x,
-          sc2y,
-          sendX,
-          sendY,
-          matrix
-        );
-        lastControlX = sc2x;
-        lastControlY = sc2y;
-        currentX = sendX;
-        currentY = sendY;
-        break;
-      case "Q":
-        addTransformedQuadraticBezierBounds(
-          bbox,
-          currentX,
-          currentY,
-          cmd.x1,
-          cmd.y1,
-          cmd.x,
-          cmd.y,
-          matrix
-        );
-        lastControlX = cmd.x1;
-        lastControlY = cmd.y1;
-        currentX = cmd.x;
-        currentY = cmd.y;
-        break;
-      case "q":
-        const qc1x = currentX + cmd.x1;
-        const qc1y = currentY + cmd.y1;
-        const qendX = currentX + cmd.x;
-        const qendY = currentY + cmd.y;
-        addTransformedQuadraticBezierBounds(
-          bbox,
-          currentX,
-          currentY,
-          qc1x,
-          qc1y,
-          qendX,
-          qendY,
-          matrix
-        );
-        lastControlX = qc1x;
-        lastControlY = qc1y;
-        currentX = qendX;
-        currentY = qendY;
-        break;
-      case "T":
-        const tx1 = lastControlX ? 2 * currentX - lastControlX : currentX;
-        const ty1 = lastControlY ? 2 * currentY - lastControlY : currentY;
-        addTransformedQuadraticBezierBounds(
-          bbox,
-          currentX,
-          currentY,
-          tx1,
-          ty1,
-          cmd.x,
-          cmd.y,
-          matrix
-        );
-        lastControlX = tx1;
-        lastControlY = ty1;
-        currentX = cmd.x;
-        currentY = cmd.y;
-        break;
-      case "t":
-        const tx1Rel = lastControlX ? 2 * currentX - lastControlX : currentX;
-        const ty1Rel = lastControlY ? 2 * currentY - lastControlY : currentY;
-        const tendX = currentX + cmd.x;
-        const tendY = currentY + cmd.y;
-        addTransformedQuadraticBezierBounds(
-          bbox,
-          currentX,
-          currentY,
-          tx1Rel,
-          ty1Rel,
-          tendX,
-          tendY,
-          matrix
-        );
-        lastControlX = tx1Rel;
-        lastControlY = ty1Rel;
-        currentX = tendX;
-        currentY = tendY;
-        break;
-      case "A":
-        addTransformedArcBounds(
-          bbox,
-          currentX,
-          currentY,
-          cmd.rx,
-          cmd.ry,
-          cmd.xAxisRotation,
-          cmd.largeArcFlag,
-          cmd.sweepFlag,
-          cmd.x,
-          cmd.y,
-          matrix
-        );
-        currentX = cmd.x;
-        currentY = cmd.y;
-        break;
-      case "a":
-        const aendX = currentX + cmd.x;
-        const aendY = currentY + cmd.y;
-        addTransformedArcBounds(
-          bbox,
-          currentX,
-          currentY,
-          cmd.rx,
-          cmd.ry,
-          cmd.xAxisRotation,
-          cmd.largeArcFlag,
-          cmd.sweepFlag,
-          aendX,
-          aendY,
-          matrix
-        );
-        currentX = aendX;
-        currentY = aendY;
-        break;
-      case "Z":
-      case "z":
-        if (currentX !== startX || currentY !== startY) {
-          addTransformedPoint(bbox, startX, startY, matrix);
-        }
-        currentX = startX;
-        currentY = startY;
-        break;
-    }
-  }
-
-  if (bbox.minX === Infinity) return null;
 
   return transformBoundingBox(bbox, viewBox, scaleX, scaleY);
 }

@@ -37,7 +37,9 @@
           canvas.parent("sketch-container");
 
           mySVG = await p.loadSVG("./sample.svg", {
-            convertLines: false,
+            //convertLines: false,
+            //flattenTransforms: true,
+            //flattenShapes: true,
           });
           console.log("SVG loaded:", mySVG);
 
