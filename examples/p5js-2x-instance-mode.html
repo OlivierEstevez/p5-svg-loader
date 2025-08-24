@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>p5-svg-loader - P5.js 2.0 Instance Mode</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        background-color: #222;
+        color: #fff;
+      }
+    </style>
+    <!-- Load p5.js 2.0 -->
+    <script src="https://cdn.jsdelivr.net/npm/p5@2.0.0/lib/p5.min.js"></script>
+    <!-- Load our add-on library -->
+    <script src="../dist/p5-svg-loader.js"></script>
+  </head>
+
+  <body>
+    <h1>p5-svg-loader - P5.js 2.x Instance Mode</h1>
+    <div id="sketch-container"></div>
+
+    <script>
+      let sketch;
+      let mySVG;
+      let svgElement;
+
+      // Instance mode sketch
+      const sketchInstance = (p) => {
+        let savedTest;
+
+        p.setup = async function () {
+          const canvas = p.createCanvas(1200, 1200);
+          canvas.parent("sketch-container");
+
+          mySVG = await p.loadSVG("./sample.svg", {
+            //convertLines: false,
+            //flattenTransforms: true,
+            //flattenShapes: true,
+          });
+          console.log("SVG loaded:", mySVG);
+
+          //p.translate(p.width / 2, p.height / 2);
+
+          p.background(240);
+
+          // Draw grid with 10px increments
+          p.stroke(200);
+          p.strokeWeight(0.5);
+
+          // Vertical lines
+          for (let x = 0; x <= p.width; x += 10) {
+            p.line(x, 0, x, p.height);
+            // Add labels every 50px
+            if (x % 50 === 0) {
+              p.noStroke();
+              p.fill(100);
+              p.textSize(10);
+              p.text(x, x + 2, 15);
+              p.stroke(200);
+            }
+          }
+
+          // Horizontal lines
+          for (let y = 0; y <= p.height; y += 10) {
+            p.line(0, y, p.width, y);
+            // Add labels every 50px
+            if (y % 50 === 0) {
+              p.noStroke();
+              p.fill(100);
+              p.textSize(10);
+              p.text(y, 2, y - 5);
+              p.stroke(200);
+            }
+          }
+
+          const w = mySVG.width * 4;
+          const h = mySVG.height * 4;
+          p.drawSVG(mySVG, 0, 0, w, h, {
+            ignoreStyles: false,
+          });
+          p.drawSVGDebug(mySVG, 0, 0, w, h);
+
+          savedTest = mySVG;
+        };
+
+        /*p.draw = function () {
+          p.background(240);
+          p.text(Math.round(p.frameRate()), 10, 10);
+          savedTest.children[0].styles.transform[0].angle = p.frameCount % 45;
+          savedTest.children[0].styles.transform[1].angle = p.frameCount % 45;
+          p.drawSVG(savedTest, 0, 0, mySVG.width * 4, mySVG.height * 4);
+          p.drawSVGDebug(savedTest, 0, 0, mySVG.width * 4, mySVG.height * 4);
+        };*/
+
+        // Store reference to the instance
+        sketch = p;
+      };
+
+      // Create the sketch instance
+      new p5(sketchInstance);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "name": "p5-svg-loader",
+  "version": "0.0.1",
+  "description": "A P5.js add-on library for loading SVG files",
+  "type": "module",
+  "main": "dist/p5-svg-loader.js",
+  "module": "dist/p5-svg-loader.esm.js",
+  "scripts": {
+    "build": "rollup -c",
+    "build:dev": "rollup -c --watch",
+    "dev": "rollup -c --watch",
+    "serve": "http-server . -p 8080 -o",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "p5js",
+    "svg",
+    "loader",
+    "addon",
+    "library"
+  ],
+  "author": "Olivier Estévez",
+  "license": "MIT",
+  "dependencies": {
+    "svg-parser": "^2.0.4"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "http-server": "^14.1.1",
+    "rollup": "^4.6.0"
+  },
+  "files": [
+    "dist/",
+    "src/",
+    "examples/"
+  ]
+}
