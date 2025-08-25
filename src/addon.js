@@ -54,10 +54,10 @@ function createDrawSVGDebug() {
 
 // P5.js 2.0 addon definition
 export const p5SvgLoaderAddon = function (p5, fn, lifecycles) {
-  // Register SVG class
+  console.log("⚙️ p5-svg-loader initialized with 2.x compatibility");
+
   p5.prototype.SVG = SVG;
 
-  // Main SVG loader function
   fn.loadSVG = async function (filename, callbackOrOptions, options) {
     let _callback;
     let _options;
@@ -88,20 +88,16 @@ export const p5SvgLoaderAddon = function (p5, fn, lifecycles) {
 
   // Lifecycle hooks
   lifecycles.presetup = function () {
-    console.log("⚙️ p5-svg-loader initialized");
+    // Pre-setup
   };
 };
 
-// Legacy P5.js 1.x compatibility
+// P5.js 1.x compatibility
 export function createLegacyCompatibility(p5) {
-  console.warn(
-    "p5-svg-loader: P5.js 2.0 addon system not available, falling back to 1.x compatibility"
-  );
+  console.log("⚙️ p5-svg-loader initialized with 1.x compatibility");
 
-  // Register SVG class
   p5.prototype.SVG = SVG;
 
-  // Fixed P5.js 1.x loadSVG function
   p5.prototype.loadSVG = function (filename, callbackOrOptions, options) {
     let _callback;
     let _options;
@@ -115,6 +111,7 @@ export function createLegacyCompatibility(p5) {
     }
 
     let result = {};
+    const isPreloading = this._decrementPreload !== undefined;
 
     fetch(filename)
       .then((res) => {
@@ -125,7 +122,7 @@ export function createLegacyCompatibility(p5) {
       })
       .then((svgContent) => {
         try {
-          const svgObject = new this.SVG(svgContent, _options);
+          const svgObject = new p5.prototype.SVG(svgContent, _options);
           Object.assign(result, svgObject);
 
           if (_callback) {
@@ -133,30 +130,33 @@ export function createLegacyCompatibility(p5) {
           }
         } catch (error) {
           console.error("Error parsing SVG:", error);
+          if (_callback) {
+            _callback(null, error);
+          }
         }
-        this._decrementPreload();
+
+        if (isPreloading) {
+          this._decrementPreload();
+        }
       })
       .catch((error) => {
         console.error("Error loading SVG:", error);
-        this._decrementPreload();
+        if (_callback) {
+          _callback(null, error);
+        }
+
+        if (isPreloading) {
+          this._decrementPreload();
+        }
       });
 
     return result;
   };
 
-  // Register for preload functionality in P5.js 1.x
-  if (p5.prototype.registerPreloadMethod) {
+  if (typeof p5.prototype.registerPreloadMethod === "function") {
     p5.prototype.registerPreloadMethod("loadSVG", p5.prototype);
   }
 
   p5.prototype.drawSVG = createDrawSVG();
   p5.prototype.drawSVGDebug = createDrawSVGDebug();
-
-  // Legacy lifecycle hooks
-  if (p5.prototype.registerMethod) {
-    p5.prototype.svgLoaderInit = function () {
-      console.log("p5-svg-loader initialized (legacy mode)");
-    };
-    p5.prototype.registerMethod("init", p5.prototype.svgLoaderInit);
-  }
 }

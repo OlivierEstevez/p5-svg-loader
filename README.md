@@ -27,7 +27,7 @@ Yes, there's [p5.js-svg](https://github.com/zenozeng/p5.js-svg), but that conver
 
 ## Script file
 
-Download the latest p5-svg-loader.min.js file from the [Releases](https://github.com/OlivierEstevez/p5-svg-loader/releases) section and place it in your project directory, or include it using a CDN like unpkg or jsdeliver. Add the script tag to the HTML file **after importing `p5.js`**:
+Download the latest `p5-svg-loader.min.js` file from the [Releases](https://github.com/OlivierEstevez/p5-svg-loader/releases) section and place it in your project directory, or include it using a CDN like unpkg or jsdeliver. Add the script tag to the HTML file **after importing `p5.js`**:
 
 ```html
 <!-- Import p5.js first -->
@@ -45,12 +45,14 @@ Download the latest p5-svg-loader.min.js file from the [Releases](https://github
 
 ## NPM (⚠️ TO-DO)
 
+You can install the library via npm. This library extends the `p5` global object, so you only need to import it to access its commands as if they were native `p5` functions.
+
 ```bash
-npm install p5bezier
+npm install p5-svg-loader
 ```
 
 ```javascript
-import p5SVGLoader from "p5-svg-loader"; // (⚠️ TO-DO: Verify this)
+import "p5-svg-loader";
 ```
 
 ## Importing the library
@@ -81,7 +83,7 @@ The library functions are attached automatically to the `p5` global object, so y
 ```javascript
 // p5.js 2.x Instance Mode
 import p5 from "p5";
-import p5SVGLoader from "p5-svg-loader"; // (⚠️ TO-DO: Verify this)
+import "p5-svg-loader";
 
 let mySVG;
 
@@ -148,7 +150,8 @@ An optional object can be passed to configure how the SVG is loaded.
 | `flattenTransforms` | `boolean` | `false` | Applies transform operations directly to path data        |
 | `flattenShapes`     | `boolean` | `false` | Converts all shapes to paths and applies their transforms |
 
-> [!WARNING] > `flattenShapes` applies `flattenTransforms` internally. Setting both to `true` will display a warning
+> [!WARNING]
+> `flattenShapes` applies `flattenTransforms` internally. Setting both to `true` will display a warning
 
 ```javascript
 const mySVG = loadSVG("sample.svg", {

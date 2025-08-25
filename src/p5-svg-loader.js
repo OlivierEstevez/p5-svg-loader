@@ -1,6 +1,6 @@
 /**
  * p5-svg-loader.js
- * A P5.js add-on library for loading and manipulating SVG files.
+ * A p5.js add-on library for loading and displaying SVG files.
  *
  * @version 0.0.1
  * @author Olivier Estévez
@@ -9,19 +9,13 @@
 
 import { p5SvgLoaderAddon, createLegacyCompatibility } from "./addon.js";
 
-(function () {
-  "use strict";
-
-  // Register the addon with P5.js 2.0
-  if (typeof p5 !== "undefined" && p5.registerAddon) {
+if (typeof p5 !== "undefined") {
+  if (p5.registerAddon) {
     p5.registerAddon(p5SvgLoaderAddon);
   } else {
-    // Fallback for P5.js 1.x compatibility
     createLegacyCompatibility(p5);
   }
-
-  // Export for module systems
-  if (typeof module !== "undefined" && module.exports) {
-    module.exports = p5;
-  }
-})();
+} else if (typeof window !== "undefined") {
+  console.error("p5-svg-loader: p5.js should be loaded before p5-svg-loader");
+}
+export default p5SvgLoaderAddon;
