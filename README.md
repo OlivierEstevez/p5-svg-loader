@@ -27,7 +27,7 @@ Yes, there's [p5.js-svg](https://github.com/zenozeng/p5.js-svg), but that conver
 
 ## Script file
 
-Download the latest `p5-svg-loader.min.js` file from the [Releases](https://github.com/OlivierEstevez/p5-svg-loader/releases) section and place it in your project directory, or include it using a CDN like unpkg or jsdeliver. Add the script tag to the HTML file **after importing `p5.js`**:
+Download the latest `p5-svg-loader.min.js` file from the [Releases](https://github.com/OlivierEstevez/p5-svg-loader/releases) section and place it in your project directory, or include it using a CDN like unpkg or jsDelivr. Add the script tag to the HTML file **after importing `p5.js`**:
 
 ```html
 <!-- Import p5.js first -->
@@ -37,10 +37,8 @@ Download the latest `p5-svg-loader.min.js` file from the [Releases](https://gith
 <script src="p5-svg-loader.min.js"></script>
 
 <!-- Or use a CDN  -->
-<script src="https://cdn.jsdelivr.net/npm/p5-svg-loader.min.js@latest"></script>
-(⚠️ TO-DO)
-<script src="https://unpkg.com/p5-svg-loader.min.js@latest"></script>
-(⚠️ TO-DO)
+<script src="https://cdn.jsdelivr.net/npm/p5-svg-loader@latest/dist/p5-svg-loader.min.js"></script>
+<script src="https://unpkg.com/p5-svg-loader@0.0.1/dist/p5-svg-loader.min.js"></script>
 ```
 
 ## NPM
