@@ -43,7 +43,7 @@ Download the latest `p5-svg-loader.min.js` file from the [Releases](https://gith
 (⚠️ TO-DO)
 ```
 
-## NPM (⚠️ TO-DO)
+## NPM
 
 You can install the library via npm. This library extends the `p5` global object, so you only need to import it to access its commands as if they were native `p5` functions.
 
@@ -150,8 +150,7 @@ An optional object can be passed to configure how the SVG is loaded.
 | `flattenTransforms` | `boolean` | `false` | Applies transform operations directly to path data        |
 | `flattenShapes`     | `boolean` | `false` | Converts all shapes to paths and applies their transforms |
 
-> [!WARNING]
-> `flattenShapes` applies `flattenTransforms` internally. Setting both to `true` will display a warning
+> [!WARNING] > `flattenShapes` applies `flattenTransforms` internally. Setting both to `true` will display a warning
 
 ```javascript
 const mySVG = loadSVG("sample.svg", {
