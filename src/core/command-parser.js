@@ -588,7 +588,12 @@ export function parseTextToCommands(props, children) {
 export function preprocessStyles(props) {
   const styles = {};
 
-  if (props.fill === "none") {
+  if (
+    props.fill === "none" ||
+    props.fill === "transparent" ||
+    props.fill === "inherit" ||
+    props.fill === ""
+  ) {
     styles.fill = "none";
   } else if (props.fill) {
     styles.fill = props.fill;
@@ -598,7 +603,12 @@ export function preprocessStyles(props) {
     styles.fillOpacity = parseFloat(props["fill-opacity"]);
   }
 
-  if (props.stroke === "none") {
+  if (
+    props.stroke === "none" ||
+    props.stroke === "transparent" ||
+    props.stroke === "inherit" ||
+    props.stroke === ""
+  ) {
     styles.stroke = "none";
   } else if (props.stroke) {
     styles.stroke = props.stroke;
