@@ -691,23 +691,3 @@ export function drawPolygon(p, commands, viewBox, scaleX, scaleY) {
   });
   p.endShape(p.CLOSE);
 }
-
-/**
- * Draw parsed text
- * @param {Object} p - p5.js instance
- * @param {Object} command - Text command object
- * @param {Object} viewBox - SVG viewBox
- * @param {number} scaleX - X scale factor
- * @param {number} scaleY - Y scale factor
- */
-export function drawText(p, command, viewBox, scaleX, scaleY) {
-  if (!command.content) return;
-
-  const pos = transformCoord(command.x, command.y, viewBox, scaleX, scaleY);
-
-  p.push();
-  p.translate(pos.x, pos.y);
-  p.scale(scaleX, scaleY);
-  p.text(command.content, 0, 0);
-  p.pop();
-}

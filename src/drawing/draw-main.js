@@ -10,7 +10,6 @@ import {
   drawLine,
   drawPolyline,
   drawPolygon,
-  drawText,
 } from "./shapes.js";
 
 /**
@@ -69,9 +68,6 @@ export function drawParsedElement(
       break;
     case "polygon":
       drawPolygon(p, element.commands, viewBox, scaleX, scaleY);
-      break;
-    case "text":
-      drawText(p, element.commands[0], viewBox, scaleX, scaleY);
       break;
     case "group":
       if (element.children && element.children.length > 0) {
@@ -223,12 +219,6 @@ function applyStyles(p, styles) {
   p.drawingContext.setLineDash([]);
   p.drawingContext.lineDashOffset = 0;
 
-  // Text
-  p.textSize(10);
-  p.textAlign(p.LEFT);
-  p.textFont("Arial");
-  p.textStyle(p.NORMAL);
-
   if (styles.fill === "none") {
     p.noFill();
   } else if (styles.fill) {
@@ -328,28 +318,6 @@ function applyStyles(p, styles) {
 
     if (styles.strokeDashoffset !== undefined) {
       p.drawingContext.lineDashOffset = styles.strokeDashoffset;
-    }
-  }
-
-  if (styles.fontSize) {
-    p.textSize(styles.fontSize);
-  }
-
-  if (styles.fontFamily) {
-    p.textFont(styles.fontFamily);
-  }
-
-  if (styles.textAnchor) {
-    switch (styles.textAnchor) {
-      case "middle":
-        p.textAlign(p.CENTER);
-        break;
-      case "end":
-        p.textAlign(p.RIGHT);
-        break;
-      default:
-        p.textAlign(p.LEFT);
-        break;
     }
   }
 

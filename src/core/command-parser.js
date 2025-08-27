@@ -564,23 +564,6 @@ export function parseLineToCommands(props) {
 }
 
 /**
- * Parse text properties into command objects
- * @param {Object} props - Text properties
- * @param {Array} children - Text children (for content)
- * @returns {Object} Text command object
- */
-export function parseTextToCommands(props, children) {
-  const textContent = children && children.length > 0 ? children[0].value : "";
-
-  return {
-    type: "text",
-    x: parseFloat(props.x) || 0,
-    y: parseFloat(props.y) || 0,
-    content: textContent,
-  };
-}
-
-/**
  * Pre-process styles into a standardized format
  * @param {Object} props - Element properties
  * @returns {Object} Processed styles object
@@ -629,18 +612,6 @@ export function preprocessStyles(props) {
     if (!isNaN(dashOffset)) {
       styles.strokeDashoffset = dashOffset;
     }
-  }
-
-  if (props["font-size"] !== undefined) {
-    styles.fontSize = parseFloat(props["font-size"]);
-  }
-
-  if (props["font-family"]) {
-    styles.fontFamily = props["font-family"];
-  }
-
-  if (props["text-anchor"]) {
-    styles.textAnchor = props["text-anchor"];
   }
 
   // Opacity

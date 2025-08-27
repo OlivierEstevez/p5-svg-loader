@@ -330,13 +330,6 @@ export function flattenTransforms(element) {
       pathCommands = polyToPathCommands(element.commands, true);
       break;
 
-    case "text":
-      // Text is complex to convert to path - for now, return empty array
-      console.warn(
-        "Text elements cannot be converted to paths in flattenTransforms"
-      );
-      return [];
-
     case "group":
       // For groups, recursively flatten all children and combine
       if (element.children && element.children.length > 0) {
