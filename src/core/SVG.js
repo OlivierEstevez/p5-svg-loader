@@ -11,7 +11,6 @@ import {
   parseCircleToCommands,
   parseEllipseToCommands,
   parseLineToCommands,
-  parseTextToCommands,
   preprocessStyles,
 } from "./command-parser.js";
 import { flattenTransforms } from "../drawing/path.js";
@@ -226,11 +225,6 @@ export class SVG {
         case "polygon":
           elementType = "polygon";
           commands = parsePointsToCommands(props.points);
-          break;
-
-        case "text":
-          elementType = "text";
-          commands = [parseTextToCommands(props, children)];
           break;
 
         case "g":

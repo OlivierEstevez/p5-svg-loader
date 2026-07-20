@@ -57,14 +57,6 @@ export function calculateBoundingBox(node, viewBox, scaleX, scaleY) {
         scaleY,
         node.styles?.transform
       );
-    case "text":
-      return calculateTextBoundingBox(
-        node.commands,
-        node.children,
-        viewBox,
-        scaleX,
-        scaleY
-      );
     default:
       return null;
   }
@@ -502,31 +494,6 @@ export function calculatePolyBoundingBox(
   points.forEach((point) => {
     addPoint(bbox, point.x, point.y);
   });
-
-  return transformBoundingBox(bbox, viewBox, scaleX, scaleY);
-}
-
-export function calculateTextBoundingBox(
-  props,
-  children,
-  viewBox,
-  scaleX,
-  scaleY
-) {
-  const x = parseFloat(props.x) || 0;
-  const y = parseFloat(props.y) || 0;
-  const textContent = children ? children[0].value : "";
-
-  if (!textContent) return null;
-
-  // Simple text bounding box approximation
-  const fontSize = parseFloat(props["font-size"]) || 10;
-  const bbox = {
-    minX: x,
-    minY: y - fontSize,
-    maxX: x + textContent.length * fontSize * 0.6,
-    maxY: y,
-  };
 
   return transformBoundingBox(bbox, viewBox, scaleX, scaleY);
 }
