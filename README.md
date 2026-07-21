@@ -142,20 +142,41 @@ async function setup() {
 
 An optional object can be passed to configure how the SVG is loaded.
 
-| Option              | Type      | Default | Description                                               |
-| ------------------- | --------- | ------- | --------------------------------------------------------- |
-| `convertLines`      | `boolean` | `false` | Converts `H`, `h`, `V` and `v` commands to `L` commands   |
-| `flattenTransforms` | `boolean` | `false` | Applies transform operations directly to path data        |
-| `flattenShapes`     | `boolean` | `false` | Converts all shapes to paths and applies their transforms |
+| Option              | Type      | Default | Description                                                                 |
+| ------------------- | --------- | ------- | --------------------------------------------------------------------------- |
+| `convertLines`      | `boolean` | `false` | Converts `H`, `h`, `V` and `v` commands to `L` commands                     |
+| `flattenTransforms` | `boolean` | `false` | Applies transform operations directly to path data                          |
+| `flattenShapes`     | `boolean` | `false` | Converts all shapes to paths and applies their transforms                   |
+| `absoluteCommands`  | `boolean` | `false` | Converts path commands to absolute `M`/`L`/`C`/`Q`/`Z` (expands `S`/`T`/`A`) |
 
 > [!WARNING] > `flattenShapes` applies `flattenTransforms` internally. Setting both to `true` will display a warning
+
+> [!NOTE]
+> `absoluteCommands` is useful for custom drawing loops (similar to [Opentype.js](https://github.com/opentypejs/opentype.js)). Pair it with `flattenShapes: true` if you also want rects, circles, etc. as path commands. `convertLines` is redundant when `absoluteCommands` is `true`.
 
 ```javascript
 const mySVG = loadSVG("sample.svg", {
   convertLines: true,
   flattenTransforms: true,
   flattenShapes: true, // This includes flattenTransforms automatically
+  absoluteCommands: true,
 });
+
+// Custom drawing with absolute commands:
+for (let cmd of mySVG.children[0].commands) {
+  if (cmd.type === "M") {
+    beginShape();
+    vertex(cmd.x, cmd.y);
+  } else if (cmd.type === "L") {
+    vertex(cmd.x, cmd.y);
+  } else if (cmd.type === "C") {
+    bezierVertex(cmd.x1, cmd.y1, cmd.x2, cmd.y2, cmd.x, cmd.y);
+  } else if (cmd.type === "Q") {
+    quadraticVertex(cmd.x1, cmd.y1, cmd.x, cmd.y);
+  } else if (cmd.type === "Z") {
+    endShape(CLOSE);
+  }
+}
 ```
 
 ## drawSVG
@@ -199,27 +220,73 @@ drawSVG(mySVG.children[2], 0, 0, mySVG.width, mySVG.height. {
 });
 ```
 
-## drawSVGDebug (⚠️ TO-DO)
+## drawSVGDebug
 
-`drawSVGDebug(SVG, options)`
+`drawSVGDebug(SVG, x, y, w, h, options)`
 
-Draws configurable debug data, like bounding boxes and bezier handles.
+Draws debug overlays: bounding boxes, path strokes, anchor points, and bezier handles.
 
 ```javascript
-// (⚠️ TO-DO)
-// This is a proof of concept syntax
-drawSVGDebug(mySVG, {
-  stroke: "#0000ff",
-  handleShape: (x, y) => {
-    push();
-    translate(x, y);
-    fill(255, 0, 0);
-    rect(x, y, 10, 10);
-    pop();
+drawSVG(mySVG, 0, 0, w, h);
+drawSVGDebug(mySVG, 0, 0, w, h, {
+  elementBoundingBoxes: {
+    show: true,
+    stroke: "#ff0000",
+    strokeWeight: 1,
+    fill: null,
+    fillOpacity: 1,
+    padding: 0,
+    cornerShape: null,
   },
-  groupBoxes: true,
+  groupBoundingBoxes: {
+    show: true,
+    stroke: "#0000ff",
+    strokeWeight: 1,
+    fill: null,
+    fillOpacity: 1,
+    padding: 0,
+    cornerShape: null,
+  },
+  transformedGroupBoundingBoxes: {
+    show: true,
+    stroke: "#008000",
+    strokeWeight: 1,
+    fill: null,
+    fillOpacity: 1,
+    padding: 10, // default padding for transformed groups
+    cornerShape: null,
+  },
+  shape: {
+    show: true,
+    stroke: 150,
+    strokeWeight: 1,
+  },
+  shapePoint: {
+    show: true,
+    stroke: "#008FE9",
+    strokeWeight: 1,
+    fill: 255,
+    fillOpacity: 1,
+    customShape: (x, y) => {
+      // push/pop are handled for you — just draw at (x, y)
+      fill(255, 0, 0);
+      ellipse(x, y, 10, 10);
+    },
+  },
+  shapeBezier: {
+    show: true,
+    stroke: "#E94900",
+    strokeWeight: 1,
+    fill: "#E94900",
+    fillOpacity: 1,
+    customShape: null, // same (x, y) => signature as shapePoint
+  },
 });
 ```
+
+> [!NOTE]
+> `customShape` / `cornerShape` receive `(x, y)` with `this` bound to the p5 instance, and are wrapped in `push()`/`pop()` automatically.
+> In **global mode**: `ellipse(x, y, 20)`. In **instance mode**: `this.ellipse(x, y, 20)`.
 
 ## `p5.SVG` object
 
