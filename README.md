@@ -142,20 +142,41 @@ async function setup() {
 
 An optional object can be passed to configure how the SVG is loaded.
 
-| Option              | Type      | Default | Description                                               |
-| ------------------- | --------- | ------- | --------------------------------------------------------- |
-| `convertLines`      | `boolean` | `false` | Converts `H`, `h`, `V` and `v` commands to `L` commands   |
-| `flattenTransforms` | `boolean` | `false` | Applies transform operations directly to path data        |
-| `flattenShapes`     | `boolean` | `false` | Converts all shapes to paths and applies their transforms |
+| Option              | Type      | Default | Description                                                                 |
+| ------------------- | --------- | ------- | --------------------------------------------------------------------------- |
+| `convertLines`      | `boolean` | `false` | Converts `H`, `h`, `V` and `v` commands to `L` commands                     |
+| `flattenTransforms` | `boolean` | `false` | Applies transform operations directly to path data                          |
+| `flattenShapes`     | `boolean` | `false` | Converts all shapes to paths and applies their transforms                   |
+| `absoluteCommands`  | `boolean` | `false` | Converts path commands to absolute `M`/`L`/`C`/`Q`/`Z` (expands `S`/`T`/`A`) |
 
 > [!WARNING] > `flattenShapes` applies `flattenTransforms` internally. Setting both to `true` will display a warning
+
+> [!NOTE]
+> `absoluteCommands` is useful for custom drawing loops (similar to [Opentype.js](https://github.com/opentypejs/opentype.js)). Pair it with `flattenShapes: true` if you also want rects, circles, etc. as path commands. `convertLines` is redundant when `absoluteCommands` is `true`.
 
 ```javascript
 const mySVG = loadSVG("sample.svg", {
   convertLines: true,
   flattenTransforms: true,
   flattenShapes: true, // This includes flattenTransforms automatically
+  absoluteCommands: true,
 });
+
+// Custom drawing with absolute commands:
+for (let cmd of mySVG.children[0].commands) {
+  if (cmd.type === "M") {
+    beginShape();
+    vertex(cmd.x, cmd.y);
+  } else if (cmd.type === "L") {
+    vertex(cmd.x, cmd.y);
+  } else if (cmd.type === "C") {
+    bezierVertex(cmd.x1, cmd.y1, cmd.x2, cmd.y2, cmd.x, cmd.y);
+  } else if (cmd.type === "Q") {
+    quadraticVertex(cmd.x1, cmd.y1, cmd.x, cmd.y);
+  } else if (cmd.type === "Z") {
+    endShape(CLOSE);
+  }
+}
 ```
 
 ## drawSVG

@@ -13,7 +13,8 @@ import {
   parseLineToCommands,
   preprocessStyles,
 } from "./command-parser.js";
-import { flattenTransforms } from "../drawing/path.js";
+import { flattenTransforms, expandArcsToCubics } from "../drawing/path.js";
+import { toAbsoluteCommands } from "./transform-utils.js";
 
 export class SVG {
   constructor(svgString, options = {}) {
@@ -76,14 +77,20 @@ export class SVG {
 
     this._addParentViewbox(children, this.viewBox);
 
-    this._checkForTransforms(children, inheritedStyles);
+    if (this.options.flattenTransforms || this.options.flattenShapes) {
+      this._checkForTransforms(children, inheritedStyles);
+    }
 
-    const parsedChildren = children.map((child) =>
+    let parsedChildren = children.map((child) =>
       this._elementToCommands(child, inheritedStyles)
     );
 
     if (this.options.flattenTransforms || this.options.flattenShapes) {
-      return this._flattenShapesOrTransforms(parsedChildren);
+      parsedChildren = this._flattenShapesOrTransforms(parsedChildren);
+    }
+
+    if (this.options.absoluteCommands) {
+      parsedChildren = this._applyAbsoluteCommands(parsedChildren);
     }
 
     return parsedChildren;
@@ -179,6 +186,36 @@ export class SVG {
     return processedElements;
   }
 
+  /**
+   * Convert path commands to absolute M/L/C/Q/Z (relative → absolute, S/T → C/Q, A → C).
+   * Groups are walked recursively; non-path shapes are left unchanged.
+   * @param {Array} elements - Parsed SVG elements
+   * @returns {Array} Elements with absolute path commands where applicable
+   */
+  _applyAbsoluteCommands(elements) {
+    return elements
+      .map((element) => {
+        if (!element) return null;
+
+        if (element.type === "group" && element.children) {
+          return {
+            ...element,
+            children: this._applyAbsoluteCommands(element.children),
+          };
+        }
+
+        if (element.type === "path" && Array.isArray(element.commands)) {
+          return {
+            ...element,
+            commands: expandArcsToCubics(toAbsoluteCommands(element.commands)),
+          };
+        }
+
+        return element;
+      })
+      .filter(Boolean);
+  }
+
   _elementToCommands(element, inheritedStyles = {}) {
     const props = element.properties || {};
     const children = element.children || [];
@@ -269,6 +306,13 @@ export class SVG {
           redundant.length > 1 ? "are" : "is"
         } redundant when flattenShapes is true. ` +
           `flattenShapes already includes this functionality.`
+      );
+    }
+
+    if (this.options.absoluteCommands && this.options.convertLines) {
+      console.warn(
+        "SVG Loader: convertLines is redundant when absoluteCommands is true. " +
+          "absoluteCommands already converts H/V commands to L."
       );
     }
   }
