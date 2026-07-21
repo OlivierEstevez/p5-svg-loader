@@ -220,27 +220,73 @@ drawSVG(mySVG.children[2], 0, 0, mySVG.width, mySVG.height. {
 });
 ```
 
-## drawSVGDebug (⚠️ TO-DO)
+## drawSVGDebug
 
-`drawSVGDebug(SVG, options)`
+`drawSVGDebug(SVG, x, y, w, h, options)`
 
-Draws configurable debug data, like bounding boxes and bezier handles.
+Draws debug overlays: bounding boxes, path strokes, anchor points, and bezier handles.
 
 ```javascript
-// (⚠️ TO-DO)
-// This is a proof of concept syntax
-drawSVGDebug(mySVG, {
-  stroke: "#0000ff",
-  handleShape: (x, y) => {
-    push();
-    translate(x, y);
-    fill(255, 0, 0);
-    rect(x, y, 10, 10);
-    pop();
+drawSVG(mySVG, 0, 0, w, h);
+drawSVGDebug(mySVG, 0, 0, w, h, {
+  elementBoundingBoxes: {
+    show: true,
+    stroke: "#ff0000",
+    strokeWeight: 1,
+    fill: null,
+    fillOpacity: 1,
+    padding: 0,
+    cornerShape: null,
   },
-  groupBoxes: true,
+  groupBoundingBoxes: {
+    show: true,
+    stroke: "#0000ff",
+    strokeWeight: 1,
+    fill: null,
+    fillOpacity: 1,
+    padding: 0,
+    cornerShape: null,
+  },
+  transformedGroupBoundingBoxes: {
+    show: true,
+    stroke: "#008000",
+    strokeWeight: 1,
+    fill: null,
+    fillOpacity: 1,
+    padding: 10, // default padding for transformed groups
+    cornerShape: null,
+  },
+  shape: {
+    show: true,
+    stroke: 150,
+    strokeWeight: 1,
+  },
+  shapePoint: {
+    show: true,
+    stroke: "#008FE9",
+    strokeWeight: 1,
+    fill: 255,
+    fillOpacity: 1,
+    customShape: (x, y) => {
+      // push/pop are handled for you — just draw at (x, y)
+      fill(255, 0, 0);
+      ellipse(x, y, 10, 10);
+    },
+  },
+  shapeBezier: {
+    show: true,
+    stroke: "#E94900",
+    strokeWeight: 1,
+    fill: "#E94900",
+    fillOpacity: 1,
+    customShape: null, // same (x, y) => signature as shapePoint
+  },
 });
 ```
+
+> [!NOTE]
+> `customShape` / `cornerShape` receive `(x, y)` with `this` bound to the p5 instance, and are wrapped in `push()`/`pop()` automatically.
+> In **global mode**: `ellipse(x, y, 20)`. In **instance mode**: `this.ellipse(x, y, 20)`.
 
 ## `p5.SVG` object
 

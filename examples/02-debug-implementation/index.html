@@ -9,22 +9,37 @@
     <a href="../">← Back to Examples</a>
     <h1>Debug Implementation</h1>
     <p>
-      Draws an SVG with <code>drawSVGDebug</code>.
-      Bounding boxes:
-      <span style="color: red">red = shapes</span>,
-      <span style="color: blue">blue = groups</span>,
-      <span style="color: green">green = transformed groups</span>.
-      Paths:
-      <span style="color: #969696">gray = path stroke</span>,
-      <span style="color: #E94900">orange = bezier handles</span>,
-      <span style="color: #008FE9">blue = anchor points</span>.
+      Showcases every <code>drawSVGDebug</code> option (<code>drawSVG</code> off).
     </p>
+    <ul>
+      <li>
+        <strong>elementBoundingBoxes</strong> —
+        <span style="color: red">red</span> box + square corners
+      </li>
+      <li>
+        <strong>groupBoundingBoxes</strong> —
+        <span style="color: blue">blue</span> box + circle corners
+      </li>
+      <li>
+        <strong>transformedGroupBoundingBoxes</strong> —
+        <span style="color: green">green</span> box + triangle corners (padding: 10)
+      </li>
+      <li>
+        <strong>shape</strong> —
+        <span style="color: #969696">gray</span> path stroke
+      </li>
+      <li>
+        <strong>shapePoint</strong> —
+        <span style="color: #008FE9">blue</span> custom ellipses
+      </li>
+      <li>
+        <strong>shapeBezier</strong> —
+        <span style="color: #E94900">orange</span> custom diamonds
+      </li>
+    </ul>
     <div id="sketch-container"></div>
 
-    <!-- Import p5.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-
-    <!-- Import the SVG loader library -->
     <script type="module" src="sketch.js"></script>
   </body>
 </html>

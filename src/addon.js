@@ -4,7 +4,10 @@
 
 import { SVG } from "./core/SVG.js";
 import { drawParsedSVG } from "./drawing/draw-main.js";
-import { drawDebugNode } from "./drawing/drawing-debug.js";
+import {
+  drawDebugNode,
+  resolveDebugOptions,
+} from "./drawing/drawing-debug.js";
 
 // Shared utility functions to avoid duplication
 function createDrawSVG() {
@@ -37,16 +40,26 @@ function createDrawSVGDebug() {
     x,
     y,
     width = svgData.width || svgData.bounds.width,
-    height = svgData.height || svgData.bounds.height
+    height = svgData.height || svgData.bounds.height,
+    options = {}
   ) {
     const effectiveViewBox = svgData.viewBox;
     const scaleX = width / effectiveViewBox.width;
     const scaleY = height / effectiveViewBox.height;
+    const debugOptions = resolveDebugOptions(options);
 
     this.push();
     this.translate(x, y);
 
-    drawDebugNode(this, svgData, effectiveViewBox, scaleX, scaleY);
+    drawDebugNode(
+      this,
+      svgData,
+      effectiveViewBox,
+      scaleX,
+      scaleY,
+      [],
+      debugOptions
+    );
 
     this.pop();
   };
