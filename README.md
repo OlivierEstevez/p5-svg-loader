@@ -38,7 +38,7 @@ Download the latest `p5-svg-loader.min.js` file from the [Releases](https://gith
 
 <!-- Or use a CDN  -->
 <script src="https://cdn.jsdelivr.net/npm/p5-svg-loader@latest/dist/p5-svg-loader.min.js"></script>
-<script src="https://unpkg.com/p5-svg-loader@0.0.1/dist/p5-svg-loader.min.js"></script>
+<script src="https://unpkg.com/p5-svg-loader@0.1.0/dist/p5-svg-loader.min.js"></script>
 ```
 
 ## NPM

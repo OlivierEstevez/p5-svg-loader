@@ -1,6 +1,6 @@
 {
   "name": "p5-svg-loader",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A p5.js add-on library for loading and displaying SVG files.",
   "type": "module",
   "main": "dist/p5-svg-loader.js",

@@ -2,7 +2,7 @@
  * p5-svg-loader.js
  * A p5.js add-on library for loading and displaying SVG files.
  *
- * @version 0.0.1
+ * @version 0.1.0
  * @author Olivier Estévez
  * @license MIT
  */
