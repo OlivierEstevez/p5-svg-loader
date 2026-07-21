@@ -110,6 +110,66 @@ export function arcSegmentToBezier(cx, cy, rx, ry, phi, startAngle, endAngle) {
   return { x1, y1, x2: q1x, y2: q1y, x3: q2x, y3: q2y, x4, y4 };
 }
 
+/**
+ * Expand absolute arc commands into cubic beziers.
+ * @param {Array} commands - Absolute path commands
+ * @returns {Array} Commands with A replaced by C segments
+ */
+export function expandArcsToCubics(commands) {
+  const result = [];
+  let curX = 0;
+  let curY = 0;
+  let startX = 0;
+  let startY = 0;
+
+  for (const cmd of commands) {
+    if (cmd.type === "A") {
+      const curves = ellipticalArcToBezier(
+        curX,
+        curY,
+        cmd.rx,
+        cmd.ry,
+        cmd.xAxisRotation,
+        cmd.largeArcFlag,
+        cmd.sweepFlag,
+        cmd.x,
+        cmd.y
+      );
+
+      for (const bez of curves) {
+        result.push({
+          type: "C",
+          x1: bez.x2,
+          y1: bez.y2,
+          x2: bez.x3,
+          y2: bez.y3,
+          x: bez.x4,
+          y: bez.y4,
+        });
+      }
+
+      curX = cmd.x;
+      curY = cmd.y;
+    } else {
+      result.push(cmd);
+      if (cmd.type === "M") {
+        curX = cmd.x;
+        curY = cmd.y;
+        startX = curX;
+        startY = curY;
+      } else if (cmd.type === "Z") {
+        curX = startX;
+        curY = startY;
+      } else if (cmd.x != null && cmd.y != null) {
+        curX = cmd.x;
+        curY = cmd.y;
+      }
+    }
+  }
+
+  return result;
+}
+
 // Helper function to draw Bezier curves
 export function drawBezierCurve(p, bezier, viewBox, scaleX, scaleY) {
   const p2 = transformCoord(bezier.x2, bezier.y2, viewBox, scaleX, scaleY);

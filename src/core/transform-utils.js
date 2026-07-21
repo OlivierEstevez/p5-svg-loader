@@ -179,11 +179,12 @@ export function applyTransformsToPath(commands, transforms) {
 }
 
 /**
- * Convert all SVG path commands to absolute coordinates and convert H/V to L
+ * Convert all SVG path commands to absolute coordinates and convert H/V to L.
+ * Leaves S/T as S/T (does not expand reflected control points).
  * @param {Array} commands - Array of path commands
  * @returns {Array} Commands with all relative converted to absolute and H/V converted to L
  */
-function normalizePathCommands(commands) {
+export function normalizePathCommands(commands) {
   let currentX = 0;
   let currentY = 0;
   let hasInitialMove = false;
@@ -389,6 +390,109 @@ function normalizePathCommands(commands) {
 
     return newCommand;
   });
+}
+
+/**
+ * Expand absolute smooth curve commands (S/T) into full C/Q with reflected controls.
+ * Expects commands already normalized to absolute form.
+ * @param {Array} commands - Absolute path commands
+ * @returns {Array} Commands with S→C and T→Q
+ */
+export function expandSmoothCommands(commands) {
+  let curX = 0;
+  let curY = 0;
+  let startX = 0;
+  let startY = 0;
+  let prevType = null;
+  let prevX2 = null;
+  let prevY2 = null;
+  const result = [];
+
+  for (const cmd of commands) {
+    const t = cmd.type;
+    let out = cmd;
+
+    if (t === "M") {
+      curX = cmd.x;
+      curY = cmd.y;
+      startX = curX;
+      startY = curY;
+    } else if (t === "S") {
+      let x1;
+      let y1;
+      if (prevType === "C" || prevType === "S") {
+        x1 = 2 * curX - prevX2;
+        y1 = 2 * curY - prevY2;
+      } else {
+        x1 = curX;
+        y1 = curY;
+      }
+      out = {
+        type: "C",
+        x1,
+        y1,
+        x2: cmd.x2,
+        y2: cmd.y2,
+        x: cmd.x,
+        y: cmd.y,
+      };
+      prevX2 = cmd.x2;
+      prevY2 = cmd.y2;
+      curX = cmd.x;
+      curY = cmd.y;
+    } else if (t === "T") {
+      let x1;
+      let y1;
+      if (prevType === "Q" || prevType === "T") {
+        x1 = 2 * curX - prevX2;
+        y1 = 2 * curY - prevY2;
+      } else {
+        x1 = curX;
+        y1 = curY;
+      }
+      out = { type: "Q", x1, y1, x: cmd.x, y: cmd.y };
+      prevX2 = x1;
+      prevY2 = y1;
+      curX = cmd.x;
+      curY = cmd.y;
+    } else if (t === "C") {
+      prevX2 = cmd.x2;
+      prevY2 = cmd.y2;
+      curX = cmd.x;
+      curY = cmd.y;
+    } else if (t === "Q") {
+      prevX2 = cmd.x1;
+      prevY2 = cmd.y1;
+      curX = cmd.x;
+      curY = cmd.y;
+    } else if (t === "Z") {
+      curX = startX;
+      curY = startY;
+    } else if (cmd.x != null && cmd.y != null) {
+      curX = cmd.x;
+      curY = cmd.y;
+    }
+
+    prevType = t;
+    if (t !== "C" && t !== "S" && t !== "Q" && t !== "T") {
+      prevX2 = null;
+      prevY2 = null;
+    }
+
+    result.push(out);
+  }
+
+  return result;
+}
+
+/**
+ * Convert path commands to absolute M/L/C/Q/A/Z form (relative → absolute, H/V → L, S/T → C/Q).
+ * Useful for manual drawing loops (Opentype-style). Does not expand arcs.
+ * @param {Array} commands - Array of path commands
+ * @returns {Array} Absolute commands with smooth curves expanded
+ */
+export function toAbsoluteCommands(commands) {
+  return expandSmoothCommands(normalizePathCommands(commands));
 }
 
 /**
